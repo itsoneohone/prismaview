@@ -4,9 +4,10 @@ import { PrismaModule } from './prisma/prisma.module';
 import { UserModule } from './user/user.module';
 import { APP_GUARD } from '@nestjs/core';
 import { SessionGuard } from './auth/guards';
+import { ExpenseModule } from './expense/expense.module';
 
 @Module({
-  imports: [AuthModule, PrismaModule, UserModule],
+  imports: [AuthModule, PrismaModule, UserModule, ExpenseModule],
   controllers: [],
   providers: [
     {
