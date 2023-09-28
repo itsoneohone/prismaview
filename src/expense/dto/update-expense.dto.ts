@@ -1,4 +1,4 @@
-export interface UpdateExpenseDto {
+export class UpdateExpenseDto {
   title?: string;
   description?: string;
   amount?: string;

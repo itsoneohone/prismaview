@@ -6,6 +6,7 @@ import {
 import { Expense } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateExpenseDto, UpdateExpenseDto } from './dto';
+import { PaginateDto, PaginateResultDto } from 'src/common/dto';
 
 @Injectable()
 export class ExpenseService {
@@ -47,12 +48,28 @@ export class ExpenseService {
     return expense;
   }
 
-  getAllUserExpenses(userId: number): Promise<Array<Expense>> {
-    return this.prisma.expense.findMany({
+  async getAllUserExpenses(
+    userId: number,
+    paginate: PaginateDto,
+  ): Promise<PaginateResultDto> {
+    const expenses = await this.prisma.expense.findMany({
+      where: {
+        userId,
+      },
+      take: paginate.limit,
+      skip: paginate.offset,
+    });
+    const count = await this.prisma.expense.count({
       where: {
         userId,
       },
     });
+
+    return {
+      data: expenses,
+      count,
+      hasMore: count > paginate.limit + paginate.offset,
+    };
   }
 
   getAllUserExpenseById(userId: number, expenseId: number): Promise<Expense> {
