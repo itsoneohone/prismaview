@@ -7,7 +7,9 @@ import {
   Patch,
   Post,
   Query,
+  UseInterceptors,
 } from '@nestjs/common';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { CreateExpenseDto, UpdateExpenseDto } from './dto';
 import { ExpenseService } from './expense.service';
 import { GetUserId } from '../auth/decorators';
@@ -17,6 +19,8 @@ import { PaginateDto, PaginateResultDto } from '../common/dto';
 export class ExpenseController {
   constructor(private expenseService: ExpenseService) {}
 
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(5)
   @Get()
   getAllUserExpenses(
     @GetUserId() userId: number,
