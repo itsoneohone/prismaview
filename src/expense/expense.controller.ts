@@ -9,7 +9,7 @@ import {
   Query,
   UseInterceptors,
 } from '@nestjs/common';
-import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
+import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
 import { CreateExpenseDto, UpdateExpenseDto } from './dto';
 import { ExpenseService } from './expense.service';
 import { GetUserId } from '../auth/decorators';
@@ -20,7 +20,8 @@ export class ExpenseController {
   constructor(private expenseService: ExpenseService) {}
 
   @UseInterceptors(CacheInterceptor)
-  @CacheTTL(5)
+  @CacheKey('all-expenses')
+  @CacheTTL(32)
   @Get()
   getAllUserExpenses(
     @GetUserId() userId: number,

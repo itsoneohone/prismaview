@@ -1,24 +1,25 @@
 import { NestFactory } from '@nestjs/core';
 import * as session from 'express-session';
-// import * as redisStore from 'cache-manager-redis-store';
 import { createClient } from 'redis';
 import RedisStore from 'connect-redis';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  const configService = app.get(ConfigService);
+
   // redis connection logic
-  // const RedisStore = connectRedis(session);
   const redisClient = createClient({
-    url: 'redis://localhost:6379',
+    url: configService.get('REDIS_URL'),
   });
 
   // Set up the session middleware
   app.use(
     session({
-      secret: 'super_secret',
+      secret: configService.get('SESSION_SECRET'),
       resave: false,
       saveUninitialized: false,
       store: new RedisStore({
