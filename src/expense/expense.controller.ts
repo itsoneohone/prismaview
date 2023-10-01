@@ -15,18 +15,23 @@ import { ExpenseService } from './expense.service';
 import { GetUserId } from '../auth/decorators';
 import { PaginateDto, PaginateResultDto } from '../common/dto';
 
-@UseInterceptors(CacheInterceptor)
-@CacheTTL(42000)
 @Controller('expense')
 export class ExpenseController {
   constructor(private expenseService: ExpenseService) {}
 
+  private timeout(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  @UseInterceptors(CacheInterceptor)
+  // @CacheTTL(20000)
   @CacheKey('all-expenses')
   @Get()
-  getAllUserExpenses(
+  async getAllUserExpenses(
     @GetUserId() userId: number,
     @Query() paginate: PaginateDto,
   ): Promise<PaginateResultDto> {
+    await this.timeout(1000);
     return this.expenseService.getAllUserExpenses(userId, paginate);
   }
 

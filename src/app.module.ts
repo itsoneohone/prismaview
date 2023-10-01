@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { CacheModule } from '@nestjs/cache-manager';
-import * as redisStore from 'cache-manager-redis-store';
+// import * as redisStore from 'cache-manager-redis-store';
+import { redisStore } from 'cache-manager-redis-yet';
 import { RedisClientOptions } from 'redis';
 import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -23,14 +24,19 @@ import { ScheduleModule } from '@nestjs/schedule';
     ExpenseModule,
     SchedulerModule,
     ScheduleModule.forRoot(),
+    // CacheModule.register({
+    //   isGlobal: true,
+    //   ttl: 6000,
+    // }),
     CacheModule.registerAsync<RedisClientOptions>({
       isGlobal: true,
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => {
+      useFactory: async (config: ConfigService) => {
         return {
-          store: redisStore,
-          url: config.getOrThrow('REDIS_URL'),
-          ttl: 32,
+          store: await redisStore({
+            url: config.getOrThrow('REDIS_URL'),
+            ttl: 8000,
+          }),
         };
       },
     }),
