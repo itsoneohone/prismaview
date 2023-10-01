@@ -19,4 +19,20 @@ export class UserService {
       },
     });
   }
+
+  getAllUsers() {
+    return this.prisma.user.findMany({
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        createdAt: true,
+        _count: {
+          select: {
+            expenses: true,
+          },
+        },
+      },
+    });
+  }
 }

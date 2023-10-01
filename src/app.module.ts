@@ -6,9 +6,11 @@ import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { UserModule } from './user/user.module';
 import { APP_GUARD } from '@nestjs/core';
-import { SessionGuard } from './auth/guards';
+import { AdminGuard, SessionGuard } from './auth/guards';
 import { ExpenseModule } from './expense/expense.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { SchedulerModule } from './scheduler/scheduler.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -19,6 +21,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     PrismaModule,
     UserModule,
     ExpenseModule,
+    SchedulerModule,
+    ScheduleModule.forRoot(),
     CacheModule.registerAsync<RedisClientOptions>({
       isGlobal: true,
       inject: [ConfigService],
@@ -26,6 +30,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         return {
           store: redisStore,
           url: config.getOrThrow('REDIS_URL'),
+          ttl: 32,
         };
       },
     }),
@@ -35,6 +40,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     {
       provide: APP_GUARD,
       useClass: SessionGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: AdminGuard,
     },
   ],
 })

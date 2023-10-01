@@ -15,13 +15,13 @@ import { ExpenseService } from './expense.service';
 import { GetUserId } from '../auth/decorators';
 import { PaginateDto, PaginateResultDto } from '../common/dto';
 
+@UseInterceptors(CacheInterceptor)
+@CacheTTL(42000)
 @Controller('expense')
 export class ExpenseController {
   constructor(private expenseService: ExpenseService) {}
 
-  @UseInterceptors(CacheInterceptor)
   @CacheKey('all-expenses')
-  @CacheTTL(32)
   @Get()
   getAllUserExpenses(
     @GetUserId() userId: number,

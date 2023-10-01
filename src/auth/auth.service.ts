@@ -30,7 +30,7 @@ export class AuthService {
       },
     });
 
-    return { id: user.id, email: user.email };
+    return { id: user.id, email: user.email, role: user.role };
   }
 
   async signin(dto: AuthDto) {
@@ -53,6 +53,6 @@ export class AuthService {
     }
 
     // Return user information
-    return { id: user.id, email: user.email };
+    return { id: user.id, email: user.email, role: user.role };
   }
 }

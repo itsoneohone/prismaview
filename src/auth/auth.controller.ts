@@ -11,6 +11,7 @@ import { AuthService } from './auth.service';
 import { AuthDto } from './dto';
 import { UserSession } from './types';
 import { PublicRoute } from './decorators';
+import { Role } from '@prisma/client';
 
 @PublicRoute()
 @Controller('auth')
@@ -19,21 +20,27 @@ export class AuthController {
 
   @Post('signup')
   async signup(@Body() dto: AuthDto, @Session() session: UserSession) {
-    const { id, email } = await this.authService.signup(dto);
-    this.serializeSession(id, email, session);
+    const { id, email, role } = await this.authService.signup(dto);
+    this.serializeSession(id, email, role, session);
   }
 
   @HttpCode(HttpStatus.OK)
   @Post('signin')
   async signin(@Body() dto: AuthDto, @Session() session: UserSession) {
-    const { id, email } = await this.authService.signin(dto);
-    this.serializeSession(id, email, session);
+    const { id, email, role } = await this.authService.signin(dto);
+    this.serializeSession(id, email, role, session);
   }
 
-  private serializeSession(id: number, email: string, session: UserSession) {
+  private serializeSession(
+    id: number,
+    email: string,
+    role: Role,
+    session: UserSession,
+  ) {
     session.user = {
       id,
       email,
+      role,
     };
   }
 }

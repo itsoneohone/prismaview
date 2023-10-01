@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "user" ALTER COLUMN "currentBalance" SET DEFAULT '2000',
+ALTER COLUMN "currentBalance" SET DATA TYPE TEXT,
+ALTER COLUMN "initialBalance" SET DEFAULT '2000',
+ALTER COLUMN "initialBalance" SET DATA TYPE TEXT;
