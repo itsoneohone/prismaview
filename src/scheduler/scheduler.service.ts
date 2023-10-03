@@ -1,15 +1,22 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression, Interval, Timeout } from '@nestjs/schedule';
-import { PrismaService } from 'src/prisma/prisma.service';
 import { Expense } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class SchedulerService {
   private logger = new Logger(SchedulerService.name);
   constructor(private prisma: PrismaService) {}
 
-  @Cron(CronExpression.EVERY_10_MINUTES)
-  async handleCron() {
+  getExpensesSum(expenses: Array<Expense>) {
+    const sum = expenses.reduce((prev: number, next: Expense): number => {
+      return prev + Number(next.amount);
+    }, 0);
+    return sum;
+  }
+
+  @Cron(CronExpression.EVERY_10_SECONDS)
+  async computeBalances() {
     this.logger.debug('computeBalances() started.');
     const users = await this.prisma.user.findMany({
       include: {
@@ -18,12 +25,7 @@ export class SchedulerService {
     });
 
     for (const user of users) {
-      const sum = user.expenses.reduce(
-        (prev: number, next: Expense): number => {
-          return prev + Number(next.amount);
-        },
-        0,
-      );
+      const sum = this.getExpensesSum(user.expenses);
 
       if (Number(user.initialBalance) - sum >= Number(user.currentBalance)) {
         this.logger.log(
@@ -33,11 +35,7 @@ export class SchedulerService {
       }
 
       const newBalance: number = Number(user.initialBalance) - sum;
-      console.log({
-        initialBalance: Number(user.initialBalance),
-        sum,
-        newBalance,
-      });
+
       await this.prisma.user
         .update({
           where: {

@@ -1,5 +1,7 @@
+import { Decimal } from '@prisma/client/runtime/library';
 import {
   IsDateString,
+  IsDecimal,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -14,9 +16,9 @@ export class CreateExpenseDto {
   @IsOptional()
   description?: string;
 
-  @IsString()
+  @IsDecimal()
   @IsNotEmpty()
-  amount: string;
+  amount: number;
 
   @IsDateString()
   date: Date;
