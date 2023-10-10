@@ -18,7 +18,7 @@ export class CreateExpenseDto {
 
   @IsDecimal()
   @IsNotEmpty()
-  amount: number;
+  amount: Decimal;
 
   @IsDateString()
   date: Date;

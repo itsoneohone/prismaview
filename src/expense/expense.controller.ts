@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   Patch,
   Post,
@@ -57,6 +59,7 @@ export class ExpenseController {
     return this.expenseService.updateUserExpenseById(userId, expenseId, dto);
   }
 
+  @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
   deleteUserExpenseById(
     @GetUserId() userId: number,

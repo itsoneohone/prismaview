@@ -5,6 +5,9 @@ import RedisStore from 'connect-redis';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+// import * as sourceMapSupport from 'source-map-support';
+
+// sourceMapSupport.install();
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
