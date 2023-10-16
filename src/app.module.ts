@@ -13,6 +13,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SchedulerModule } from './scheduler/scheduler.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app/app.controller';
+import { OrderModule } from './order/order.module';
+import { OrderService } from './order/order.service';
 
 @Module({
   imports: [
@@ -41,6 +43,7 @@ import { AppController } from './app/app.controller';
         };
       },
     }),
+    OrderModule,
   ],
   controllers: [AppController],
   providers: [
@@ -52,6 +55,7 @@ import { AppController } from './app/app.controller';
       provide: APP_GUARD,
       useClass: AdminGuard,
     },
+    OrderService,
   ],
 })
 export class AppModule {}

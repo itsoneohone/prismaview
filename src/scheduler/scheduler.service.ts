@@ -15,7 +15,7 @@ export class SchedulerService {
     return sum;
   }
 
-  @Cron(CronExpression.EVERY_10_SECONDS)
+  @Cron(CronExpression.EVERY_10_MINUTES)
   async computeBalances() {
     this.logger.debug('computeBalances() started.');
     const users = await this.prisma.user.findMany({

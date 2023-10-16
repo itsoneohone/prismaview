@@ -1,5 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
-import { name, version } from 'package.json';
+import { name as appName, version as appVersion } from 'package.json';
 import { PublicRoute } from 'src/auth/decorators';
 
 @PublicRoute()
@@ -8,8 +8,8 @@ export class AppController {
   @Get('/status')
   getStatus() {
     return {
-      name,
-      version,
+      name: appName,
+      version: appVersion,
     };
   }
 }
