@@ -15,6 +15,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app/app.controller';
 import { OrderModule } from './order/order.module';
 import { OrderService } from './order/order.service';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { OrderService } from './order/order.service';
       },
     }),
     OrderModule,
+    EventsModule,
   ],
   controllers: [AppController],
   providers: [

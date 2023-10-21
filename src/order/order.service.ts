@@ -1,8 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import {
   version as ccxtVersion,
   exchanges as ccxtExchanges,
   kraken,
+  bitstamp,
 } from 'ccxt';
 import { ConfigService } from '@nestjs/config';
 import { sleep } from 'src/common/utils';
@@ -10,13 +11,29 @@ import { sleep } from 'src/common/utils';
 @Injectable()
 export class OrderService {
   private exchange: kraken;
+  private bitstampExchange: bitstamp;
   private logger = new Logger(OrderService.name);
   constructor(private config: ConfigService) {
     this.exchange = new kraken({
       apiKey: this.config.getOrThrow('KRAKEN_API_KEY'),
       secret: this.config.getOrThrow('KRAKEN_SECRET'),
     });
-    this.exchange.checkRequiredCredentials();
+    try {
+      this.exchange.checkRequiredCredentials();
+    } catch (err) {
+      throw new ForbiddenException(err);
+    }
+
+    this.bitstampExchange = new bitstamp({
+      apiKey: this.config.getOrThrow('BITSTAMP_API_KEY'),
+      secret: this.config.getOrThrow('BITSTAMP_SECRET'),
+    });
+    try {
+      const status = this.bitstampExchange.checkRequiredCredentials();
+      console.log({ bitstampStatus: status });
+    } catch (err) {
+      throw new ForbiddenException(err);
+    }
   }
 
   _prepareAPIEndpoint(page) {
@@ -74,34 +91,32 @@ export class OrderService {
   }
 
   async exchangeSupports() {
+    const exchange = this.bitstampExchange;
     console.log({
-      requiredCredentials: this.exchange.requiredCredentials,
-      enableRateLimit: this.exchange.enableRateLimit,
-      api: this.exchange.api.private,
+      requiredCredentials: exchange.requiredCredentials,
+      enableRateLimit: exchange.enableRateLimit,
+      api: exchange.api.private,
     });
-    return Object.keys(this.exchange.has).reduce((_supports, key) => {
-      if (this.exchange.has[key]) {
-        _supports[key] = this.exchange.has[key];
+    const lookFor = 'order';
+    return Object.keys(exchange.has).reduce((_supports, key) => {
+      if (exchange.has[key]) {
+        if ((lookFor && key.toLowerCase().includes(lookFor)) || !lookFor) {
+          _supports[key] = exchange.has[key];
+        }
       }
       return _supports;
     }, {});
   }
 
-  async fetchOrders() {
-    const startDate = new Date(2021, 1, 1);
-    const start = this.exchange.parse8601(startDate.toISOString()) / 1000;
-    const startJs = startDate.getTime();
-    const endDate = new Date(2021, 2, 1);
-    const end = this.exchange.parse8601(endDate.toISOString()) / 1000;
-    const endJs = endDate.getTime();
+  async fetchKrakenOrders() {
+    const start = new Date(2021, 1, 1).getTime() / 1000;
+    const end = new Date(2021, 2, 1).getTime() / 1000;
     const since = undefined;
     console.log({
-      startDate: startDate.toISOString(),
+      startDate: new Date(start).toISOString(),
       start,
-      startJs,
-      endDate: endDate.toISOString(),
+      endDate: new Date(end).toISOString(),
       end,
-      endJs,
     });
     const symbol = undefined;
     const limit = undefined;
@@ -127,5 +142,42 @@ export class OrderService {
       canceledOrdersCount: allOrders['canceled']?.length,
       cancelledOrders: allOrders['canceled'],
     };
+  }
+
+  async fetchΒitstampOrders() {
+    const start = new Date(2021, 1, 1).getTime() / 1000;
+    const end = new Date(2021, 2, 1).getTime() / 1000;
+    const since = undefined;
+    console.log({
+      startDate: new Date(start).toISOString(),
+      start,
+      endDate: new Date(end).toISOString(),
+      end,
+    });
+    const symbol = undefined;
+    const limit = 10;
+    // const orders = await this.bitstampExchange.privatePostUserTransactions({
+    //   limit,
+    // });
+    const orders = await this.bitstampExchange.fetchMyTrades();
+
+    return { orders };
+    // const allOrders = orders.reduce((_orders, order) => {
+    //   if (!_orders[order.status]) {
+    //     _orders[order.status] = [];
+    //   }
+    //   _orders[order.status].push(order);
+
+    //   return _orders;
+    // }, {});
+
+    // return {
+    //   totalCount: this.exchange.last_json_response.result.count,
+    //   count: orders.length,
+    //   closedOrdersCount: allOrders['closed']?.length,
+    //   closedOrders: allOrders['closed'],
+    //   canceledOrdersCount: allOrders['canceled']?.length,
+    //   cancelledOrders: allOrders['canceled'],
+    // };
   }
 }

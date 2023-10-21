@@ -12,7 +12,8 @@ export class OrderController {
 
   @Get('ccxt')
   ccxt() {
-    // return this.orderService.fetchOrders();
-    return this.orderService.paginate();
+    return this.orderService.fetchΒitstampOrders();
+    // return this.orderService.fetchKrakenOrders();
+    // return this.orderService.paginate();
   }
 }
