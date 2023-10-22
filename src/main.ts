@@ -20,17 +20,17 @@ async function bootstrap() {
     url: configService.get('REDIS_URL'),
   });
 
-  // Set up the session middleware
-  app.use(
-    session({
-      secret: configService.get('SESSION_SECRET'),
-      resave: false,
-      saveUninitialized: false,
-      store: new RedisStore({
-        client: redisClient,
-      }),
-    }),
-  );
+  // // Set up the session middleware
+  // app.use(
+  //   session({
+  //     secret: configService.get('SESSION_SECRET'),
+  //     resave: false,
+  //     saveUninitialized: false,
+  //     store: new RedisStore({
+  //       client: redisClient,
+  //     }),
+  //   }),
+  // );
 
   // Connect to redis
   await redisClient.connect().catch((error) => {

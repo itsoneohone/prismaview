@@ -1,6 +1,7 @@
-import { Controller, Get, SetMetadata } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { UserService } from './user.service';
-import { AdminRoute, GetUserId } from '../auth/decorators';
+import { AdminRoute, PublicRoute } from '../auth/decorators';
+import { GetUserFromJwt } from 'src/auth/decorators';
 
 @Controller('user')
 export class UserController {
@@ -13,7 +14,7 @@ export class UserController {
   }
 
   @Get('me')
-  me(@GetUserId() userId: number) {
+  me(@GetUserFromJwt('id') userId: number) {
     return this.userService.getMe(userId);
   }
 }

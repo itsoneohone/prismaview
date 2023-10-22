@@ -16,6 +16,7 @@ import { AppController } from './app/app.controller';
 import { OrderModule } from './order/order.module';
 import { OrderService } from './order/order.service';
 import { EventsModule } from './events/events.module';
+import { JwtGuard } from 'src/auth/guards/jwt.guard';
 
 @Module({
   imports: [
@@ -51,12 +52,16 @@ import { EventsModule } from './events/events.module';
   providers: [
     {
       provide: APP_GUARD,
-      useClass: SessionGuard,
+      useClass: JwtGuard,
     },
-    {
-      provide: APP_GUARD,
-      useClass: AdminGuard,
-    },
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: SessionGuard,
+    // },
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: AdminGuard,
+    // },
     OrderService,
   ],
 })

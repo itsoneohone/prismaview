@@ -21,17 +21,28 @@ import { Response } from 'express';
 export class AuthController {
   constructor(private authService: AuthService) {}
 
+  // @Post('signup')
+  // async signup(@Body() dto: AuthDto, @Session() session: UserSession) {
+  //   const { id, email, role } = await this.authService.signup(dto);
+  //   return this.serializeSession(id, email, role, session);
+  // }
+
   @Post('signup')
-  async signup(@Body() dto: AuthDto, @Session() session: UserSession) {
-    const { id, email, role } = await this.authService.signup(dto);
-    return this.serializeSession(id, email, role, session);
+  async signup(@Body() dto: AuthDto) {
+    return this.authService.jwtSignup(dto);
   }
+
+  // @HttpCode(HttpStatus.OK)
+  // @Post('signin')
+  // async signin(@Body() dto: AuthDto, @Session() session: UserSession) {
+  //   const { id, email, role } = await this.authService.signin(dto);
+  //   return this.serializeSession(id, email, role, session);
+  // }
 
   @HttpCode(HttpStatus.OK)
   @Post('signin')
-  async signin(@Body() dto: AuthDto, @Session() session: UserSession) {
-    const { id, email, role } = await this.authService.signin(dto);
-    return this.serializeSession(id, email, role, session);
+  async signin(@Body() dto: AuthDto) {
+    return this.authService.jwtSignin(dto);
   }
 
   private serializeSession(
