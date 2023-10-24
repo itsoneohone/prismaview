@@ -22,6 +22,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json --watch"
   },
   "dependencies": {
+    "@nestjs/axios": "^3.0.0",
     "@nestjs/cache-manager": "^2.1.0",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.1.1",
@@ -35,6 +36,7 @@
     "@prisma/client": "^5.3.1",
     "@types/hbs": "^4.0.2",
     "argon2": "^0.31.1",
+    "axios": "^1.5.1",
     "cache-manager": "^5.2.3",
     "cache-manager-redis-yet": "^4.1.2",
     "ccxt": "^4.1.11",

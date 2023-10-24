@@ -7,13 +7,19 @@ import {
 } from 'ccxt';
 import { ConfigService } from '@nestjs/config';
 import { sleep } from 'src/common/utils';
+import { EMPTY, catchError, delay, expand, from, reduce, tap } from 'rxjs';
+import { HttpService } from '@nestjs/axios';
+import { AxiosError } from 'axios';
 
 @Injectable()
 export class OrderService {
   private exchange: kraken;
   private bitstampExchange: bitstamp;
   private logger = new Logger(OrderService.name);
-  constructor(private config: ConfigService) {
+  constructor(
+    private config: ConfigService,
+    private httpService: HttpService,
+  ) {
     this.exchange = new kraken({
       apiKey: this.config.getOrThrow('KRAKEN_API_KEY'),
       secret: this.config.getOrThrow('KRAKEN_SECRET'),
@@ -30,7 +36,6 @@ export class OrderService {
     });
     try {
       const status = this.bitstampExchange.checkRequiredCredentials();
-      console.log({ bitstampStatus: status });
     } catch (err) {
       throw new ForbiddenException(err);
     }
@@ -42,6 +47,50 @@ export class OrderService {
 
   _hasMoreData(count: number, limit: number, offset: number) {
     return count > limit + offset;
+  }
+
+  paginate2() {
+    const limit = 10;
+    const people = [];
+    let totalCount: number;
+    let offset = 0;
+    let page = 1;
+    let hasMore = false;
+
+    this.logger.debug('[START] Fetch StarWars characters');
+
+    const paginationObs = this.httpService
+      .get(this._prepareAPIEndpoint(page))
+      .pipe(
+        catchError((error: AxiosError) => {
+          this.logger.error(error.response.data);
+          throw `An error occurred (${error.response.data})`;
+        }),
+        tap(() => console.log(`  - Fetched page ${page}`)),
+        expand((res) => {
+          if (res.data.next && page < 3) {
+            page += 1;
+            return this.httpService.get(res.data.next).pipe(
+              catchError((error: AxiosError) => {
+                this.logger.error(error.response.data);
+                throw `An error occurred (${error.response.data})`;
+              }),
+              tap(() => console.log(`  - Fetched page ${page}`)),
+              delay(10),
+              tap(() => console.log(' - Waited for 10ms')),
+            );
+          }
+          return EMPTY;
+        }),
+        tap(() => console.log(`    * Processing page ${page}`)),
+        reduce((acc, current) => {
+          const { results } = current.data;
+
+          return acc.concat(results);
+        }, []),
+      );
+
+    return paginationObs;
   }
 
   async paginate() {
@@ -145,7 +194,7 @@ export class OrderService {
   }
 
   async fetchΒitstampOrders() {
-    const start = new Date(2021, 1, 1).getTime() / 1000;
+    const start = new Date(2017, 1, 1).getTime() / 1000;
     const end = new Date(2021, 2, 1).getTime() / 1000;
     const since = undefined;
     console.log({
@@ -156,10 +205,15 @@ export class OrderService {
     });
     const symbol = undefined;
     const limit = 10;
-    // const orders = await this.bitstampExchange.privatePostUserTransactions({
+    const orders = await this.bitstampExchange.privatePostUserTransactions({
+      limit,
+      sort: 'asc',
+    });
+    // const orders = await this.bitstampExchange.fetchMyTrades(
+    //   symbol,
+    //   start,
     //   limit,
-    // });
-    const orders = await this.bitstampExchange.fetchMyTrades();
+    // );
 
     return { orders };
     // const allOrders = orders.reduce((_orders, order) => {

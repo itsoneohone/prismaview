@@ -7,7 +7,7 @@ import {
   WsResponse,
 } from '@nestjs/websockets';
 import { from, Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { delay, map } from 'rxjs/operators';
 import { Server, Socket } from 'socket.io';
 import { sleep } from 'src/common/utils';
 
@@ -23,6 +23,7 @@ export class EventsGateway {
   @SubscribeMessage('events')
   handleFindAll(@MessageBody() data: any): Observable<WsResponse<number>> {
     return from([1, 2, 3]).pipe(
+      delay(1000),
       map((item) => ({ event: 'events', data: item })),
     );
   }

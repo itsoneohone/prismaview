@@ -17,12 +17,14 @@ import { OrderModule } from './order/order.module';
 import { OrderService } from './order/order.service';
 import { EventsModule } from './events/events.module';
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    HttpModule,
     AuthModule,
     PrismaModule,
     UserModule,
