@@ -14,7 +14,7 @@ import {
 import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
 import { CreateExpenseDto, UpdateExpenseDto } from './dto';
 import { ExpenseService } from './expense.service';
-import { GetUserId } from '../auth/decorators';
+import { GetUserFromJwt } from '../auth/decorators';
 import { PaginateDto, PaginateResultDto } from '../common/dto';
 import { sleep } from 'src/common/utils';
 
@@ -27,7 +27,7 @@ export class ExpenseController {
   @CacheKey('all-expenses')
   @Get()
   async getAllUserExpenses(
-    @GetUserId() userId: number,
+    @GetUserFromJwt('id') userId: number,
     @Query() paginate: PaginateDto,
   ): Promise<PaginateResultDto> {
     await sleep(1000);
@@ -36,20 +36,23 @@ export class ExpenseController {
 
   @Get(':id')
   getAllUserExpenseById(
-    @GetUserId() userId: number,
+    @GetUserFromJwt('id') userId: number,
     @Param('id') expenseId: number,
   ) {
     return this.expenseService.getAllUserExpenseById(userId, expenseId);
   }
 
   @Post()
-  createExpense(@GetUserId() userId: number, @Body() dto: CreateExpenseDto) {
+  createExpense(
+    @GetUserFromJwt('id') userId: number,
+    @Body() dto: CreateExpenseDto,
+  ) {
     return this.expenseService.createExpense(userId, dto);
   }
 
   @Patch(':id')
   updateUserExpenseById(
-    @GetUserId() userId: number,
+    @GetUserFromJwt('id') userId: number,
     @Param('id') expenseId: number,
     @Body() dto: UpdateExpenseDto,
   ) {
@@ -59,7 +62,7 @@ export class ExpenseController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
   deleteUserExpenseById(
-    @GetUserId() userId: number,
+    @GetUserFromJwt('id') userId: number,
     @Param('id') expenseId: number,
   ) {
     return this.expenseService.deleteUserExpenseById(userId, expenseId);

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, ModuleMetadata } from '@nestjs/common';
 import { CacheModule } from '@nestjs/cache-manager';
 // import * as redisStore from 'cache-manager-redis-store';
 import { redisStore } from 'cache-manager-redis-yet';
@@ -18,8 +18,9 @@ import { OrderService } from './order/order.service';
 import { EventsModule } from './events/events.module';
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
 import { HttpModule } from '@nestjs/axios';
+import { AccessKeysModule } from './access-keys/access-keys.module';
 
-@Module({
+export const appMetadata: ModuleMetadata = {
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
@@ -49,6 +50,7 @@ import { HttpModule } from '@nestjs/axios';
     }),
     OrderModule,
     EventsModule,
+    AccessKeysModule,
   ],
   controllers: [AppController],
   providers: [
@@ -66,5 +68,7 @@ import { HttpModule } from '@nestjs/axios';
     // },
     OrderService,
   ],
-})
+};
+
+@Module(appMetadata)
 export class AppModule {}
