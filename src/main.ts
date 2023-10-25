@@ -1,7 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { setupPipes, setupHandlebars } from 'src/app-config/app-config';
+import {
+  setupPipes,
+  setupHandlebars,
+  APP_PORT,
+} from 'src/app-config/app-config';
 
 /**
  * Create a NestJs Express application
@@ -18,7 +22,7 @@ async function bootstrap() {
   // Set up the Handlebars view engine
   setupHandlebars(app);
 
-  await app.listen(3333);
+  await app.listen(APP_PORT);
 }
 
 bootstrap();

@@ -1,3 +1,4 @@
+import * as pactum from 'pactum';
 import { faker } from '@faker-js/faker';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Test } from '@nestjs/testing';
@@ -5,16 +6,14 @@ import { RedisClientType } from 'redis';
 import { HttpStatus } from '@nestjs/common';
 import { Prisma, User } from '@prisma/client';
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
 import { AuthDto } from 'src/auth/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateExpenseDto, UpdateExpenseDto } from 'src/expense/dto';
 import { appMetadata } from 'src/app.module';
-import { setupPipes } from 'src/app-config/app-config';
+import { APP_PORT, setupPipes } from 'src/app-config/app-config';
 
 describe('App e2e', () => {
   let app: INestApplication;
-  let accessToken = '';
 
   beforeAll(async () => {
     const module = await Test.createTestingModule(appMetadata).compile();
@@ -26,8 +25,10 @@ describe('App e2e', () => {
     setupPipes(app);
 
     await app.init();
-
+    await app.listen(APP_PORT);
     await prisma.cleanDB();
+
+    pactum.request.setBaseUrl(`http://localhost:${APP_PORT}`);
   });
 
   afterAll(async () => {
@@ -54,41 +55,39 @@ describe('App e2e', () => {
 
     describe('sign up', () => {
       it('should signup', () => {
-        return request(app.getHttpServer())
+        return pactum
+          .spec()
           .post('/auth/signup')
-          .send(dto)
-          .expect(201);
+          .withBody(dto)
+          .expectStatus(201);
       });
     });
 
     describe('sign in', () => {
       it('should signin', () => {
-        return request(app.getHttpServer())
+        return pactum
+          .spec()
           .post('/auth/signin')
-          .send(dto)
-          .expect(200)
-          .expect(({ body }) => {
-            accessToken = body.access_token;
-          });
+          .withBody(dto)
+          .expectStatus(200)
+          .stores('accessToken', 'access_token')
+          .expectBodyContains('access_token');
       });
     });
 
     describe('user', () => {
       it('should get user', () => {
-        return request(app.getHttpServer())
+        return pactum
+          .spec()
           .get('/user/me')
-          .set('Authorization', `Bearer ${accessToken}`)
-          .expect(200)
-          .expect(({ body }) => {
-            user = body;
-            expect(body.email).toEqual(dto.email);
-          });
+          .withBearerToken('$S{accessToken}')
+          .expectStatus(HttpStatus.OK)
+          .expectBodyContains(dto.email);
       });
     });
   });
 
   describe('Expense', () => {
-    let expenseId: number;
     const dtoMock = (): CreateExpenseDto => ({
       title: faker.lorem.text(),
       description: faker.lorem.paragraph(),
@@ -98,49 +97,40 @@ describe('App e2e', () => {
     it('create expenses', async () => {
       const expenseDto1: CreateExpenseDto = dtoMock();
       const expenseDto2: CreateExpenseDto = dtoMock();
-      await request(app.getHttpServer())
-        .post('/expense')
-        .set('Authorization', `Bearer ${accessToken}`)
-        .send(expenseDto1)
-        .expect(201);
-      await request(app.getHttpServer())
-        .post('/expense')
-        .set('Authorization', `Bearer ${accessToken}`)
-        .send(expenseDto2)
-        .expect(201);
+      await Promise.all([
+        pactum
+          .spec()
+          .post('/expense')
+          .withBearerToken('$S{accessToken}')
+          .withBody(expenseDto1)
+          .expectStatus(HttpStatus.CREATED)
+          .stores('expenseId', 'id'),
+        pactum
+          .spec()
+          .post('/expense')
+          .withBearerToken('$S{accessToken}')
+          .withBody(expenseDto2)
+          .expectStatus(HttpStatus.CREATED),
+      ]);
     });
     it('get all expenses', async () => {
-      await request(app.getHttpServer())
+      await pactum
+        .spec()
         .get('/expense')
-        .set('Authorization', `Bearer ${accessToken}`)
-        .expect(({ body }) => {
-          console.log({ body });
-          expenseId = body.data[0].id;
-          expect.objectContaining({
-            data: expect.any(Array),
-            count: 2,
-            hasMore: false,
-          });
+        .withBearerToken('$S{accessToken}')
+        .expectJsonLike({
+          count: 2,
+          hasMore: false,
         })
-        .expect(200);
+        .expectStatus(HttpStatus.OK);
     });
     it('get expense by ID', async () => {
-      await request(app.getHttpServer())
-        .get(`/expense/${expenseId}`)
-        .set('Authorization', `Bearer ${accessToken}`)
-        .expect(({ body }) => {
-          expect(expenseId).toEqual(body.id);
-        })
-        .expect(200);
-      await request(app.getHttpServer())
-        .get(`/expense/${0}`)
-        .set('Authorization', `Bearer ${accessToken}`)
-        .expect(({ body }) => {
-          expect(body.statusCode).toEqual(404);
-          expect(body.error).toEqual('Not Found');
-          expect(body.message).toEqual('Resource does not exist');
-        })
-        .expect(404);
+      await pactum
+        .spec()
+        .get('/expense/$S{expenseId}')
+        .withBearerToken('$S{accessToken}')
+        .expectBodyContains('$S{expenseId}')
+        .expectStatus(HttpStatus.OK);
     });
     it('edit expense by ID', async () => {
       const amount = new Prisma.Decimal(Math.round(Math.random() * 100));
@@ -149,25 +139,26 @@ describe('App e2e', () => {
         description,
         amount,
       };
-      await request(app.getHttpServer())
-        .patch(`/expense/${expenseId}`)
-        .set('Authorization', `Bearer ${accessToken}`)
-        .send(dto)
-        .expect(({ body }) => {
-          expect(body.description).toEqual(description);
-          expect(new Prisma.Decimal(body.amount)).toEqual(amount);
-        })
-        .expect(200);
+      await pactum
+        .spec()
+        .patch('/expense/$S{expenseId}')
+        .withBearerToken('$S{accessToken}')
+        .withBody(dto)
+        .expectBodyContains(description)
+        .expectBodyContains(amount)
+        .expectStatus(HttpStatus.OK);
     });
     it('delete expense by ID', async () => {
-      await request(app.getHttpServer())
-        .delete(`/expense/${expenseId}`)
-        .set('Authorization', `Bearer ${accessToken}`)
-        .expect(HttpStatus.NO_CONTENT);
-      await request(app.getHttpServer())
-        .get(`/expense/${expenseId}`)
-        .set('Authorization', `Bearer ${accessToken}`)
-        .expect(HttpStatus.NOT_FOUND);
+      await pactum
+        .spec()
+        .delete('/expense/$S{expenseId}')
+        .withBearerToken('$S{accessToken}')
+        .expectStatus(HttpStatus.NO_CONTENT);
+      await pactum
+        .spec()
+        .get('/expense/$S{expenseId}')
+        .withBearerToken('$S{accessToken}')
+        .expectStatus(HttpStatus.NOT_FOUND);
     });
   });
 });

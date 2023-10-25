@@ -12,6 +12,8 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import * as hbs from 'hbs';
 import { ValidationError } from 'class-validator';
 
+export const APP_PORT = 3333;
+
 /**
  * Setup session middleware with persistent sessions in Redis
  * @param app NestExpressApplication
