@@ -35,7 +35,6 @@ export class AccessKeysController {
     @GetUserFromJwt('id') userId: number,
     @Body() dto: CreateAccessKeyDto,
   ) {
-    console.log({ dto });
     return this.service.createApiKey(userId, dto);
   }
 

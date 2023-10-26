@@ -49,6 +49,7 @@ model AccessKey {
   key       String   @db.VarChar(256)
   secret    String   @db.VarChar(256)
   exchange  Exchange
+  isDeleted Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

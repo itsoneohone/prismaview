@@ -21,6 +21,7 @@ export class AccessKeysService {
       this.prisma.accessKey.findMany({
         where: {
           userId,
+          isDeleted: false,
         },
         orderBy: {
           createdAt: 'desc',
@@ -31,6 +32,7 @@ export class AccessKeysService {
       this.prisma.accessKey.count({
         where: {
           userId,
+          isDeleted: false,
         },
       }),
     ]);
@@ -60,10 +62,13 @@ export class AccessKeysService {
       throw new ForbiddenException('Access to resource unauthorized');
     }
 
-    return this.prisma.accessKey.delete({
+    return this.prisma.accessKey.update({
       where: {
         id: accessKey.id,
         userId,
+      },
+      data: {
+        isDeleted: true,
       },
     });
   }

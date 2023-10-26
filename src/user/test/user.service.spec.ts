@@ -2,12 +2,12 @@ import { Test } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
 import { UserService } from '../user.service';
 import { PrismaService } from '../../prisma/prisma.service';
-import { UserStub } from '../stubs';
+import { userStubStatic } from '../stubs';
 
 jest.mock('../../prisma/prisma.service.ts');
 
 describe('UserService', () => {
-  const _user = UserStub();
+  const _user = userStubStatic;
   let service: UserService;
   let prismaService: PrismaService;
 
@@ -20,7 +20,9 @@ describe('UserService', () => {
         //   provide: PrismaService,
         //   useValue: {
         //     user: {
-        //       findUnique: jest.fn().mockResolvedValue(_user),
+        //       findUnique: jest.fn().mockImplementation(() => {
+
+        //       }),
         //     },
         //   },
         // },
@@ -48,9 +50,7 @@ describe('UserService', () => {
         expect(prismaService.user.findUnique).toHaveBeenCalledWith({
           where: { id: _user.id },
         });
-        expect(prismaService.user.findUnique).toHaveReturnedWith(
-          Promise.resolve(_user),
-        );
+        expect(prismaService.user.findUnique).toHaveReturnedWith(_user);
       });
 
       it('should return a user', () => {

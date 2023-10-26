@@ -4,22 +4,24 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Test } from '@nestjs/testing';
 import { RedisClientType } from 'redis';
 import { HttpStatus } from '@nestjs/common';
-import { Prisma, User } from '@prisma/client';
+import { Exchange, Prisma, User } from '@prisma/client';
 import { INestApplication } from '@nestjs/common';
 import { AuthDto } from 'src/auth/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateExpenseDto, UpdateExpenseDto } from 'src/expense/dto';
 import { appMetadata } from 'src/app.module';
 import { APP_PORT, setupPipes } from 'src/app-config/app-config';
+import { CreateAccessKeyDto } from 'src/access-keys/dto';
 
 describe('App e2e', () => {
   let app: INestApplication;
+  let prisma: PrismaService;
 
   beforeAll(async () => {
     const module = await Test.createTestingModule(appMetadata).compile();
     app = module.createNestApplication();
 
-    const prisma: PrismaService = app.get(PrismaService);
+    prisma = app.get(PrismaService);
 
     // Set up pipes
     setupPipes(app);
@@ -82,7 +84,8 @@ describe('App e2e', () => {
           .get('/user/me')
           .withBearerToken('$S{accessToken}')
           .expectStatus(HttpStatus.OK)
-          .expectBodyContains(dto.email);
+          .expectBodyContains(dto.email)
+          .stores('userId', 'id');
       });
     });
   });
@@ -159,6 +162,82 @@ describe('App e2e', () => {
         .get('/expense/$S{expenseId}')
         .withBearerToken('$S{accessToken}')
         .expectStatus(HttpStatus.NOT_FOUND);
+    });
+  });
+
+  describe('AccessKeys', () => {
+    const dtoMock = (): CreateAccessKeyDto => ({
+      name: faker.hacker.abbreviation(),
+      key: faker.string.uuid(),
+      secret: faker.string.uuid(),
+      exchange: Exchange.KRAKEN,
+    });
+    const akDto1 = dtoMock();
+    const akDto2 = dtoMock();
+
+    it('create access keys', () => {
+      return Promise.all([
+        pactum
+          .spec()
+          .post('/access-keys')
+          .withBearerToken('$S{accessToken}')
+          .withBody(akDto1)
+          .expectStatus(HttpStatus.CREATED)
+          .expectJsonLike({
+            name: akDto1.name,
+            isDeleted: false,
+            exchange: akDto1.exchange,
+            userId: '$S{userId}',
+          })
+          .stores('accessKeyId1', 'id'),
+        pactum
+          .spec()
+          .post('/access-keys')
+          .withBearerToken('$S{accessToken}')
+          .withBody(akDto2)
+          .expectStatus(HttpStatus.CREATED)
+          .expectJsonLike({
+            name: akDto2.name,
+            isDeleted: false,
+            exchange: akDto2.exchange,
+            userId: '$S{userId}',
+          })
+          .stores('accessKeyId2', 'id'),
+      ]);
+    });
+    it('get all access keys', () => {
+      return pactum
+        .spec()
+        .get('/access-keys')
+        .withBearerToken('$S{accessToken}')
+        .expectStatus(HttpStatus.OK)
+        .inspect()
+        .expectJsonLike({
+          count: 2,
+          hasMore: false,
+        })
+        .expectBodyContains('$S{accessKeyId1}')
+        .expectBodyContains('$S{accessKeyId2}');
+    });
+    it('delete access keys by Id', async () => {
+      await pactum
+        .spec()
+        .delete('/access-keys/$S{accessKeyId2}')
+        .withBearerToken('$S{accessToken}')
+        .expectStatus(HttpStatus.NO_CONTENT)
+        .inspect();
+
+      return pactum
+        .spec()
+        .get('/access-keys')
+        .withBearerToken('$S{accessToken}')
+        .expectStatus(HttpStatus.OK)
+        .inspect()
+        .expectJsonLike({
+          count: 1,
+          hasMore: false,
+        })
+        .expectBodyContains('$S{accessKeyId1}');
     });
   });
 });
