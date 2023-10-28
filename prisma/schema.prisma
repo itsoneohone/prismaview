@@ -20,6 +20,7 @@ model User {
   role           Role        @default(USER)
   expenses       Expense[]
   AccessKey      AccessKey[]
+  Order          Order[]
 
   @@map("user")
 }
@@ -54,7 +55,8 @@ model AccessKey {
   updatedAt DateTime @updatedAt
 
   userId Int
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Order  Order[]
 
   @@map("access_key")
 }
@@ -62,4 +64,63 @@ model AccessKey {
 enum Exchange {
   BITSTAMP
   KRAKEN
+}
+
+model Order {
+  id        Int            @id @default(autoincrement())
+  orderId   String?
+  timestamp BigInt
+  datetime  DateTime
+  status    OrderStatus
+  symbol    String
+  type      OrderType
+  side      OrderSide
+  price     Decimal        @db.Decimal(20, 8)
+  // actual order amount filled
+  filled    Decimal        @db.Decimal(20, 8)
+  // filled * price
+  cost      Decimal        @db.Decimal(20, 8)
+  fee       Decimal        @db.Decimal(16, 8)
+  currency  OrderCurrency
+  createdBy OrderCreatedBy @default(USER)
+  rawData   Json?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  accessKeyId Int?
+  accessKey   AccessKey? @relation(fields: [accessKeyId], references: [id], onDelete: Cascade)
+
+  @@map("order")
+}
+
+enum OrderCreatedBy {
+  USER
+  SCRIPT
+}
+
+enum OrderCurrency {
+  EUR
+  GBP
+  USD
+}
+
+enum OrderStatus {
+  PENDING
+  OPEN
+  CLOSED
+  CANCELED
+  EXPIRED
+}
+
+enum OrderType {
+  LIMIT
+  MARKET
+}
+
+enum OrderSide {
+  BUY
+  SELL
 }

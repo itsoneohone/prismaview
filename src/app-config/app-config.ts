@@ -13,6 +13,7 @@ import * as hbs from 'hbs';
 import { ValidationError } from 'class-validator';
 
 export const APP_PORT = 3333;
+export const ENABLE_LOGGING = true;
 
 /**
  * Setup session middleware with persistent sessions in Redis
@@ -83,3 +84,18 @@ export function setupHandlebars(app: NestExpressApplication) {
   app.setViewEngine('hbs');
   app.set('view options', { layout: 'layouts/index' });
 }
+
+/**
+ * JSON.stringify() doesn't know how to serialize a BigInt.
+ * Monkey patch the BigInt serialization as per the MDN recommendation (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt#use_within_json)
+ * The solution is described here: https://github.com/GoogleChromeLabs/jsbi/issues/30#issuecomment-1006088574
+ */
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+interface BigInt {
+  /** Convert to BigInt to string form in JSON.stringify */
+  toJSON: () => string;
+}
+// @ts-ignore
+BigInt.prototype.toJSON = function () {
+  return this.toString();
+};

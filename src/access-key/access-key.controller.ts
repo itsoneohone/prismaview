@@ -9,16 +9,16 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { AccessKeysService } from 'src/access-keys/access-keys.service';
-import { CreateAccessKeyDto } from 'src/access-keys/dto';
+import { AccessKeyService } from 'src/access-key/access-key.service';
+import { CreateAccessKeyDto } from 'src/access-key/dto';
 import { GetUserFromJwt } from 'src/auth/decorators';
 import { PaginateDto } from 'src/common/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 
-@Controller('access-keys')
-export class AccessKeysController {
+@Controller('access-key')
+export class AccessKeyController {
   constructor(
-    private service: AccessKeysService,
+    private service: AccessKeyService,
     private prisma: PrismaService,
   ) {}
 
@@ -44,6 +44,6 @@ export class AccessKeysController {
     @GetUserFromJwt('id') userId: number,
     @Param('id') id: number,
   ) {
-    return this.service.deleteApiKey(userId, id);
+    return this.service.deleteApiKeyById(userId, id);
   }
 }

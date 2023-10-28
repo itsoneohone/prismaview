@@ -4,19 +4,29 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { AccessKey } from '@prisma/client';
-import { CreateAccessKeyDto } from 'src/access-keys/dto';
+import { CreateAccessKeyDto } from 'src/access-key/dto';
 import { PaginateDto, PaginateResultDto } from 'src/common/dto';
-import { preparePaginateResultDto } from 'src/common/utils';
+import {
+  preparePaginateResultDto,
+  SEARCH_LIMIT,
+} from 'src/common/search-utils';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
-export class AccessKeysService {
+export class AccessKeyService {
   constructor(private prisma: PrismaService) {}
 
   async getApiKeys(
     userId: number,
-    paginate: PaginateDto,
+    paginate?: PaginateDto,
   ): Promise<PaginateResultDto> {
+    if (!paginate) {
+      paginate = {
+        limit: SEARCH_LIMIT,
+        offset: 0,
+      };
+    }
+
     const [accessKeys, count] = await Promise.all([
       this.prisma.accessKey.findMany({
         where: {
@@ -29,6 +39,7 @@ export class AccessKeysService {
         take: paginate.limit,
         skip: paginate.offset,
       }),
+
       this.prisma.accessKey.count({
         where: {
           userId,
@@ -49,9 +60,9 @@ export class AccessKeysService {
     });
   }
 
-  async deleteApiKey(userId: number, id: number) {
+  async deleteApiKeyById(userId: number, id: number) {
     const accessKey = await this.prisma.accessKey.findFirst({
-      where: { userId, id },
+      where: { userId, id, isDeleted: false },
     });
 
     if (!accessKey) {
@@ -62,9 +73,9 @@ export class AccessKeysService {
       throw new ForbiddenException('Access to resource unauthorized');
     }
 
-    return this.prisma.accessKey.update({
+    return await this.prisma.accessKey.update({
       where: {
-        id: accessKey.id,
+        id: id,
         userId,
       },
       data: {

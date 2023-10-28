@@ -11,7 +11,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateExpenseDto, UpdateExpenseDto } from 'src/expense/dto';
 import { appMetadata } from 'src/app.module';
 import { APP_PORT, setupPipes } from 'src/app-config/app-config';
-import { CreateAccessKeyDto } from 'src/access-keys/dto';
+import { CreateAccessKeyDto } from 'src/access-key/dto';
 
 describe('App e2e', () => {
   let app: INestApplication;

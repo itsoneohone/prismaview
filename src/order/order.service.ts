@@ -1,4 +1,9 @@
-import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   version as ccxtVersion,
   exchanges as ccxtExchanges,
@@ -10,6 +15,15 @@ import { sleep } from 'src/common/utils';
 import { EMPTY, catchError, delay, expand, from, reduce, tap } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { AxiosError } from 'axios';
+import { CreateOrderDto, UpdateOrderDto } from 'src/order/dto';
+import { PaginateDto, PaginateResultDto } from 'src/common/dto';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { Order, Prisma } from '@prisma/client';
+import {
+  SEARCH_LIMIT,
+  preparePaginateResultDto,
+} from 'src/common/search-utils';
+import { Decimal } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class OrderService {
@@ -19,6 +33,7 @@ export class OrderService {
   constructor(
     private config: ConfigService,
     private httpService: HttpService,
+    private prisma: PrismaService,
   ) {
     this.exchange = new kraken({
       apiKey: this.config.getOrThrow('KRAKEN_API_KEY'),
@@ -158,62 +173,44 @@ export class OrderService {
   }
 
   async fetchKrakenOrders() {
-    const start = new Date(2021, 1, 1).getTime() / 1000;
-    const end = new Date(2021, 2, 1).getTime() / 1000;
+    const start = new Date(2021, 1, 1).getTime();
+    const end = new Date(2021, 2, 1).getTime();
     const since = undefined;
     console.log({
       startDate: new Date(start).toISOString(),
-      start,
+      start: start / 1000,
       endDate: new Date(end).toISOString(),
-      end,
+      end: end / 1000,
     });
+
     const symbol = undefined;
     const limit = undefined;
-    const orders = await this.exchange.fetchClosedOrders(symbol, since, limit, {
-      start,
-      end,
-    });
 
-    const allOrders = orders.reduce((_orders, order) => {
-      if (!_orders[order.status]) {
-        _orders[order.status] = [];
-      }
-      _orders[order.status].push(order);
-
-      return _orders;
-    }, {});
-
-    return {
-      totalCount: this.exchange.last_json_response.result.count,
-      count: orders.length,
-      closedOrdersCount: allOrders['closed']?.length,
-      closedOrders: allOrders['closed'],
-      canceledOrdersCount: allOrders['canceled']?.length,
-      cancelledOrders: allOrders['canceled'],
-    };
-  }
-
-  async fetchΒitstampOrders() {
-    const start = new Date(2017, 1, 1).getTime() / 1000;
-    const end = new Date(2021, 2, 1).getTime() / 1000;
-    const since = undefined;
-    console.log({
-      startDate: new Date(start).toISOString(),
-      start,
-      endDate: new Date(end).toISOString(),
-      end,
-    });
-    const symbol = undefined;
-    const limit = 10;
-    const orders = await this.bitstampExchange.privatePostUserTransactions({
-      limit,
-      sort: 'asc',
-    });
-    // const orders = await this.bitstampExchange.fetchMyTrades(
-    //   symbol,
-    //   start,
+    // const orders = await this.bitstampExchange.privatePostUserTransactions({
     //   limit,
-    // );
+    //   offset,
+    //   sort: 'asc',
+    // });
+    // const trades = await this.exchange.fetchMyTrades(symbol, since, limit, {
+    //   start: start / 1000,
+    //   end: end / 1000,
+    // });
+    // const trades = await this.exchange.privatePostTradesHistory({
+    //   start: start / 1000,
+    //   end: end / 1000,
+    // });
+    // return { trades };
+    const orders = await this.exchange.fetchClosedOrders(symbol, since, limit, {
+      start: start / 1000,
+      end: end / 1000,
+      trades: true,
+    });
+
+    // const orders = await this.exchange.privatePostClosedOrders({
+    //   start: start / 1000,
+    //   end: end / 1000,
+    //   trades: true,
+    // });
 
     return { orders };
     // const allOrders = orders.reduce((_orders, order) => {
@@ -233,5 +230,179 @@ export class OrderService {
     //   canceledOrdersCount: allOrders['canceled']?.length,
     //   cancelledOrders: allOrders['canceled'],
     // };
+  }
+
+  async fetchΒitstampOrders() {
+    const start = new Date(2017, 1, 1).getTime() / 1000;
+    const end = new Date(2021, 2, 1).getTime() / 1000;
+    const since = undefined;
+    console.log({
+      startDate: new Date(start).toISOString(),
+      start,
+      endDate: new Date(end).toISOString(),
+      end,
+    });
+    const symbol = undefined;
+    const limit = 10;
+    const offset = 1;
+    // const orders = await this.bitstampExchange.privatePostUserTransactions({
+    //   limit,
+    //   offset,
+    //   sort: 'asc',
+    // });
+    const orders = await this.bitstampExchange.fetchMyTrades(
+      symbol,
+      start,
+      limit,
+      {
+        limit,
+        sort: 'asc',
+      },
+    );
+
+    return { orders };
+    // const allOrders = orders.reduce((_orders, order) => {
+    //   if (!_orders[order.status]) {
+    //     _orders[order.status] = [];
+    //   }
+    //   _orders[order.status].push(order);
+
+    //   return _orders;
+    // }, {});
+
+    // return {
+    //   totalCount: this.exchange.last_json_response.result.count,
+    //   count: orders.length,
+    //   closedOrdersCount: allOrders['closed']?.length,
+    //   closedOrders: allOrders['closed'],
+    //   canceledOrdersCount: allOrders['canceled']?.length,
+    //   cancelledOrders: allOrders['canceled'],
+    // };
+  }
+
+  _prepareOrderAmounts(amount: Decimal | string, price: Decimal | string) {
+    if (typeof amount !== 'string' && !(amount instanceof Prisma.Decimal)) {
+      throw new Error(`Invalid amount type (${typeof amount})`);
+    }
+
+    if (typeof price !== 'string' && !(price instanceof Prisma.Decimal)) {
+      throw new Error(`Invalid price type (${typeof price})`);
+    }
+
+    const amountDecimal = new Prisma.Decimal(amount);
+    const priceDecimal = new Prisma.Decimal(price);
+
+    return {
+      filled: amountDecimal,
+      price: priceDecimal,
+      cost: amountDecimal.mul(priceDecimal),
+    };
+  }
+
+  async _getOrderById(userId: number, id: number): Promise<Order> {
+    const order = await this.prisma.order.findFirst({
+      where: { userId, id },
+    });
+
+    if (!order) {
+      throw new NotFoundException('Resource does not exist');
+    }
+
+    if (order.userId !== userId) {
+      throw new ForbiddenException('Access to resource unauthorized');
+    }
+
+    return order;
+  }
+
+  createOrder(userId: number, dto: CreateOrderDto): Promise<Order> {
+    // Convert all amounts to decimal and calculate cost
+    dto = {
+      ...dto,
+      ...this._prepareOrderAmounts(dto.filled, dto.price),
+    };
+    // Get the unix timestamp based on the input date
+    dto.timestamp = new Date(dto.datetime).getTime();
+
+    return this.prisma.order.create({
+      data: {
+        ...dto,
+        userId,
+      },
+    });
+  }
+
+  async updateOrderById(
+    userId: number,
+    id: number,
+    dto: UpdateOrderDto,
+  ): Promise<Order> {
+    const order = await this._getOrderById(userId, id);
+
+    // Convert all amounts to decimal and calculate cost
+    if (dto.filled && dto.price) {
+      dto = {
+        ...dto,
+        ...this._prepareOrderAmounts(dto.filled, dto.price),
+      };
+    }
+    // Get the unix timestamp based on the input date
+    if (dto.datetime) {
+      dto.timestamp = new Date(dto.datetime).getTime();
+    }
+
+    return this.prisma.order.update({
+      where: {
+        id,
+        userId,
+      },
+      data: {
+        ...dto,
+      },
+    });
+  }
+
+  async deleteOrderById(userId: number, id: number) {
+    const order = await this._getOrderById(userId, id);
+
+    return await this.prisma.order.delete({
+      where: {
+        id: order.id,
+        userId: order.userId,
+      },
+    });
+  }
+
+  async getOrders(
+    userId: number,
+    paginate: PaginateDto,
+  ): Promise<PaginateResultDto> {
+    if (!paginate) {
+      paginate = {
+        limit: SEARCH_LIMIT,
+        offset: 0,
+      };
+    }
+
+    const [orders, count] = await Promise.all([
+      this.prisma.order.findMany({
+        where: {
+          userId,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        take: paginate.limit,
+        skip: paginate.offset,
+      }),
+
+      this.prisma.order.count({
+        where: {
+          userId,
+        },
+      }),
+    ]);
+
+    return preparePaginateResultDto(orders, count, paginate);
   }
 }
