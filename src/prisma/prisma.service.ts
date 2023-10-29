@@ -5,7 +5,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { ENABLE_LOGGING } from 'src/app-config/app-config';
 import { LogDefinition } from '@prisma/client/runtime/library';
 

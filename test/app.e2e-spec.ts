@@ -4,14 +4,16 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Test } from '@nestjs/testing';
 import { RedisClientType } from 'redis';
 import { HttpStatus } from '@nestjs/common';
-import { Exchange, Prisma, User } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 import { INestApplication } from '@nestjs/common';
 import { AuthDto } from 'src/auth/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateExpenseDto, UpdateExpenseDto } from 'src/expense/dto';
 import { appMetadata } from 'src/app.module';
 import { APP_PORT, setupPipes } from 'src/app-config/app-config';
-import { CreateAccessKeyDto } from 'src/access-key/dto';
+import { CreateAccessKeyDtoStub } from 'src/access-key/stubs';
+import { CreateOrderDtoStub } from 'src/order/stubs';
+import { getRandomAmount } from 'src/common/amounts';
 
 describe('App e2e', () => {
   let app: INestApplication;
@@ -25,6 +27,9 @@ describe('App e2e', () => {
 
     // Set up pipes
     setupPipes(app);
+
+    // Setup decimal precision
+    Prisma.Decimal.set({ rounding: 8 });
 
     await app.init();
     await app.listen(APP_PORT);
@@ -94,7 +99,7 @@ describe('App e2e', () => {
     const dtoMock = (): CreateExpenseDto => ({
       title: faker.lorem.text(),
       description: faker.lorem.paragraph(),
-      amount: new Prisma.Decimal(Math.random() * 100),
+      amount: getRandomAmount(100),
       date: new Date(),
     });
     it('create expenses', async () => {
@@ -136,7 +141,7 @@ describe('App e2e', () => {
         .expectStatus(HttpStatus.OK);
     });
     it('edit expense by ID', async () => {
-      const amount = new Prisma.Decimal(Math.round(Math.random() * 100));
+      const amount = getRandomAmount(100);
       const description = 'Manually updated description';
       const dto: UpdateExpenseDto = {
         description,
@@ -165,21 +170,15 @@ describe('App e2e', () => {
     });
   });
 
-  describe('AccessKeys', () => {
-    const dtoMock = (): CreateAccessKeyDto => ({
-      name: faker.hacker.abbreviation(),
-      key: faker.string.uuid(),
-      secret: faker.string.uuid(),
-      exchange: Exchange.KRAKEN,
-    });
-    const akDto1 = dtoMock();
-    const akDto2 = dtoMock();
+  describe('AccessKey', () => {
+    const akDto1 = CreateAccessKeyDtoStub();
+    const akDto2 = CreateAccessKeyDtoStub();
 
-    it('create access keys', () => {
+    it('create access key', () => {
       return Promise.all([
         pactum
           .spec()
-          .post('/access-keys')
+          .post('/access-key')
           .withBearerToken('$S{accessToken}')
           .withBody(akDto1)
           .expectStatus(HttpStatus.CREATED)
@@ -192,7 +191,7 @@ describe('App e2e', () => {
           .stores('accessKeyId1', 'id'),
         pactum
           .spec()
-          .post('/access-keys')
+          .post('/access-key')
           .withBearerToken('$S{accessToken}')
           .withBody(akDto2)
           .expectStatus(HttpStatus.CREATED)
@@ -208,10 +207,9 @@ describe('App e2e', () => {
     it('get all access keys', () => {
       return pactum
         .spec()
-        .get('/access-keys')
+        .get('/access-key')
         .withBearerToken('$S{accessToken}')
         .expectStatus(HttpStatus.OK)
-        .inspect()
         .expectJsonLike({
           count: 2,
           hasMore: false,
@@ -222,22 +220,134 @@ describe('App e2e', () => {
     it('delete access keys by Id', async () => {
       await pactum
         .spec()
-        .delete('/access-keys/$S{accessKeyId2}')
+        .delete('/access-key/$S{accessKeyId2}')
         .withBearerToken('$S{accessToken}')
-        .expectStatus(HttpStatus.NO_CONTENT)
-        .inspect();
+        .expectStatus(HttpStatus.NO_CONTENT);
 
       return pactum
         .spec()
-        .get('/access-keys')
+        .get('/access-key')
         .withBearerToken('$S{accessToken}')
         .expectStatus(HttpStatus.OK)
-        .inspect()
         .expectJsonLike({
           count: 1,
           hasMore: false,
         })
         .expectBodyContains('$S{accessKeyId1}');
+    });
+  });
+
+  describe('Order', () => {
+    const orderDto1 = CreateOrderDtoStub();
+    const orderDto2 = CreateOrderDtoStub();
+
+    it('create orders', () => {
+      return Promise.all([
+        pactum
+          .spec()
+          .post('/order')
+          .withBearerToken('$S{accessToken}')
+          .withBody(orderDto1)
+          .expectStatus(HttpStatus.CREATED)
+          .expectJsonLike({
+            orderId: orderDto1.orderId,
+            status: orderDto1.status,
+            symbol: orderDto1.symbol,
+            type: orderDto1.type,
+            side: orderDto1.side,
+            // All decimal amounts are serialized to strings
+            // toString() is used to trim leading zeros
+            price: orderDto1.price.toString(),
+            filled: orderDto1.filled.toString(),
+            cost: orderDto1.cost.toString(),
+            fee: orderDto1.fee.toString(),
+            currency: orderDto1.currency,
+            userId: '$S{userId}',
+          })
+          .stores('orderId1', 'id'),
+        pactum
+          .spec()
+          .post('/order')
+          .withBearerToken('$S{accessToken}')
+          .withBody(orderDto2)
+          .expectStatus(HttpStatus.CREATED)
+          .expectJsonLike({
+            orderId: orderDto2.orderId,
+            status: orderDto2.status,
+            symbol: orderDto2.symbol,
+            type: orderDto2.type,
+            side: orderDto2.side,
+            // All decimal amounts are serialized to strings
+            price: orderDto2.price.toString(),
+            filled: orderDto2.filled.toString(),
+            cost: orderDto2.cost.toString(),
+            fee: orderDto2.fee.toString(),
+            currency: orderDto2.currency,
+            userId: '$S{userId}',
+          })
+          .stores('orderId2', 'id'),
+      ]);
+    });
+    it('update order', () => {
+      const newPrice = getRandomAmount(100);
+      const newFilled = getRandomAmount(10);
+      const expectedCost = newPrice.mul(newFilled);
+
+      return pactum
+        .spec()
+        .patch('/order/{id}')
+        .withPathParams('id', '$S{orderId1}')
+        .withBearerToken('$S{accessToken}')
+        .withBody({
+          price: newPrice,
+          filled: newFilled,
+        })
+        .expectStatus(HttpStatus.OK)
+        .expectJsonLike({
+          orderId: orderDto1.orderId,
+          status: orderDto1.status,
+          symbol: orderDto1.symbol,
+          type: orderDto1.type,
+          side: orderDto1.side,
+          // All decimal amounts are serialized to strings
+          price: newPrice.toString(),
+          filled: newFilled.toString(),
+          cost: expectedCost.toString(),
+          fee: orderDto1.fee.toString(),
+          currency: orderDto1.currency,
+          userId: '$S{userId}',
+        });
+    });
+    it('get all orders', () => {
+      return pactum
+        .spec()
+        .get('/order')
+        .withBearerToken('$S{accessToken}')
+        .expectStatus(HttpStatus.OK)
+        .expectJsonLike({
+          count: 2,
+          hasMore: false,
+        })
+        .expectBodyContains('$S{orderId1}')
+        .expectBodyContains('$S{orderId2}');
+    });
+    it('delete order by Id', async () => {
+      await pactum
+        .spec()
+        .delete('/order/$S{orderId2}')
+        .withBearerToken('$S{accessToken}')
+        .expectStatus(HttpStatus.NO_CONTENT);
+
+      return pactum
+        .spec()
+        .get('/order')
+        .withBearerToken('$S{accessToken}')
+        .expectStatus(HttpStatus.OK)
+        .expectJsonLike({
+          count: 1,
+          hasMore: false,
+        })
+        .expectBodyContains('$S{orderId1}');
     });
   });
 });

@@ -6,8 +6,8 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
-  Put,
   Query,
 } from '@nestjs/common';
 import { GetUserFromJwt } from 'src/auth/decorators';
@@ -39,7 +39,7 @@ export class OrderController {
     return this.orderService.createOrder(userId, dto);
   }
 
-  @Put(':id')
+  @Patch(':id')
   updateOrderById(
     @GetUserFromJwt('id') userId: number,
     @Param('id') id: number,
