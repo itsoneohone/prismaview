@@ -1,5 +1,6 @@
 import { faker } from '@faker-js/faker/locale/af_ZA';
-import { Expense, Prisma, Role } from '@prisma/client';
+import { Expense, Role } from '@prisma/client';
+import { Decimal } from 'src/common/amounts';
 
 const date = new Date();
 export const UserStub = (userId?: number) => {
@@ -26,15 +27,15 @@ export const UsersWithExpensesStub = () => {
       expenses: [
         {
           id: 1,
-          amount: new Prisma.Decimal(100),
+          amount: new Decimal(100),
         },
         {
           id: 2,
-          amount: new Prisma.Decimal(10),
+          amount: new Decimal(10),
         },
         {
           id: 3,
-          amount: new Prisma.Decimal(20),
+          amount: new Decimal(20),
         },
       ] as Expense[],
     },

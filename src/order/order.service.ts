@@ -23,7 +23,7 @@ import {
   SEARCH_LIMIT,
   preparePaginateResultDto,
 } from 'src/common/search-utils';
-import { Decimal } from '@prisma/client/runtime/library';
+import { DECIMAL_ROUNDING, Decimal } from 'src/common/amounts';
 
 @Injectable()
 export class OrderService {
@@ -280,25 +280,27 @@ export class OrderService {
     // };
   }
 
-  _prepareOrderAmounts(amount: Decimal | string, price: Decimal | string) {
-    if (typeof amount !== 'string' && !(amount instanceof Prisma.Decimal)) {
-      throw new Error(`Invalid amount type (${typeof amount})`);
-    }
-
-    if (typeof price !== 'string' && !(price instanceof Prisma.Decimal)) {
-      throw new Error(`Invalid price type (${typeof price})`);
-    }
-
-    const amountDecimal = new Prisma.Decimal(amount);
-    const priceDecimal = new Prisma.Decimal(price);
+  _prepareOrderAmounts(
+    amount: Prisma.Decimal | number | string,
+    price: Prisma.Decimal | number | string,
+  ) {
+    const amountDecimal = new Decimal(amount);
+    const priceDecimal = new Decimal(price);
 
     return {
       filled: amountDecimal,
       price: priceDecimal,
-      cost: amountDecimal.mul(priceDecimal),
+      cost: amountDecimal.mul(priceDecimal).toDecimalPlaces(DECIMAL_ROUNDING),
     };
   }
 
+  /**
+   * Get the order of the user using its Id or throw an error
+   *
+   * @param userId
+   * @param id
+   * @returns
+   */
   async _getOrderById(userId: number, id: number): Promise<Order> {
     const order = await this.prisma.order.findFirst({
       where: { userId, id },
@@ -313,6 +315,28 @@ export class OrderService {
     }
 
     return order;
+  }
+
+  /**
+   * Check if there is an updated filled amount and price set, and calculate the cost
+   *
+   * @param dto UpdateOrderDto
+   * @returns dto
+   */
+  _updateOrderDto(dto: UpdateOrderDto) {
+    // Convert all amounts to decimal and calculate cost
+    if (dto.filled && dto.price) {
+      dto = {
+        ...dto,
+        ...this._prepareOrderAmounts(dto.filled, dto.price),
+      };
+    }
+    // Get the unix timestamp based on the input date
+    if (dto.datetime) {
+      dto.timestamp = new Date(dto.datetime).getTime();
+    }
+
+    return dto;
   }
 
   createOrder(userId: number, dto: CreateOrderDto): Promise<Order> {
@@ -337,19 +361,8 @@ export class OrderService {
     id: number,
     dto: UpdateOrderDto,
   ): Promise<Order> {
-    const order = await this._getOrderById(userId, id);
-
-    // Convert all amounts to decimal and calculate cost
-    if (dto.filled && dto.price) {
-      dto = {
-        ...dto,
-        ...this._prepareOrderAmounts(dto.filled, dto.price),
-      };
-    }
-    // Get the unix timestamp based on the input date
-    if (dto.datetime) {
-      dto.timestamp = new Date(dto.datetime).getTime();
-    }
+    await this._getOrderById(userId, id);
+    const updatedDto = this._updateOrderDto(dto);
 
     return this.prisma.order.update({
       where: {
@@ -357,7 +370,7 @@ export class OrderService {
         userId,
       },
       data: {
-        ...dto,
+        ...updatedDto,
       },
     });
   }
@@ -375,7 +388,7 @@ export class OrderService {
 
   async getOrders(
     userId: number,
-    paginate: PaginateDto,
+    paginate?: PaginateDto,
   ): Promise<PaginateResultDto> {
     if (!paginate) {
       paginate = {

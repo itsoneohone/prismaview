@@ -200,7 +200,7 @@ describe('AccessKeyService', () => {
 
     it('should call prismaService.accessKeys.update()', () => {
       const prismaFn = prismaService.accessKey.update;
-      console.log({ expenseId });
+
       expect(prismaFn).toHaveBeenCalled();
       expect(prismaFn).toHaveBeenCalledWith({
         where: {
