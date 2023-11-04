@@ -1,14 +1,17 @@
 import { faker } from '@faker-js/faker';
-import { Exchange } from '@prisma/client';
+import { ExchangeNameEnum } from '@prisma/client';
 import { CreateAccessKeyDto } from 'src/access-key/dto';
 import { userStubStatic } from 'src/user/stubs';
 
-export const CreateAccessKeyDtoStub = (): CreateAccessKeyDto => {
+export const CreateAccessKeyDtoStub = (
+  key?: string,
+  secret?: string,
+): CreateAccessKeyDto => {
   return {
     name: faker.hacker.abbreviation(),
-    key: faker.string.uuid(),
-    secret: faker.string.uuid(),
-    exchange: Exchange.KRAKEN,
+    key: key || faker.string.uuid(),
+    secret: secret || faker.string.uuid(),
+    exchange: ExchangeNameEnum.KRAKEN,
   };
 };
 export const createAccessKeyDtoStubStatic = CreateAccessKeyDtoStub();
@@ -19,7 +22,7 @@ export const AccessKeyStub = (userId?: number, dto?: CreateAccessKeyDto) => {
     name: dto?.name || faker.hacker.abbreviation(),
     key: dto?.key || faker.string.uuid(),
     secret: dto?.secret || faker.string.uuid(),
-    exchange: dto?.exchange || Exchange.KRAKEN,
+    exchange: dto?.exchange || ExchangeNameEnum.KRAKEN,
     userId: userId || 1,
     isDeleted: false,
   };

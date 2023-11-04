@@ -1,10 +1,10 @@
 import { faker } from '@faker-js/faker';
 import {
-  OrderCreatedBy,
-  OrderCurrency,
-  OrderSide,
-  OrderStatus,
-  OrderType,
+  OrderCreatedByEnum,
+  OrderCurrencyEnum,
+  OrderSideEnum,
+  OrderStatusEnum,
+  OrderTypeEnum,
 } from '@prisma/client';
 import { CreateOrderDto, UpdateOrderDto } from 'src/order/dto';
 import { DECIMAL_ROUNDING, getRandomAmount } from 'src/common/amounts';
@@ -23,15 +23,15 @@ export const CreateOrderDtoStub = (): CreateOrderDto => {
     orderId: faker.string.uuid(),
     timestamp: date.getTime(),
     datetime: date,
-    status: OrderStatus.CLOSED,
+    status: OrderStatusEnum.CLOSED,
     symbol: 'BTC/EUR',
-    type: OrderType.MARKET,
-    side: OrderSide.BUY,
+    type: OrderTypeEnum.MARKET,
+    side: OrderSideEnum.BUY,
     price,
     filled,
     cost,
     fee,
-    currency: OrderCurrency.EUR,
+    currency: OrderCurrencyEnum.EUR,
   };
 };
 export const createOrderDtoStubStatic = CreateOrderDtoStub();
@@ -45,7 +45,7 @@ export const OrderStub = (
   return {
     ...dto,
     userId,
-    createdBy: OrderCreatedBy.USER,
+    createdBy: OrderCreatedByEnum.USER,
     createdAt: date,
     updatedAt: date,
   };

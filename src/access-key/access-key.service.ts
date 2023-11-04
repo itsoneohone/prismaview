@@ -3,9 +3,11 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { AccessKey } from '@prisma/client';
+import { AccessKey, ExchangeNameEnum } from '@prisma/client';
 import { CreateAccessKeyDto } from 'src/access-key/dto';
 import { PaginateDto, PaginateResultDto } from 'src/common/dto';
+import { GetExchangeDto } from 'src/common/exchange/dto';
+import { ExchangeFactory } from 'src/common/exchange/exchange.factory';
 import {
   preparePaginateResultDto,
   SEARCH_LIMIT,
@@ -51,7 +53,35 @@ export class AccessKeyService {
     return preparePaginateResultDto(accessKeys, count, paginate);
   }
 
-  createApiKey(userId: number, dto: CreateAccessKeyDto): Promise<AccessKey> {
+  async createApiKey(
+    userId: number,
+    dto: CreateAccessKeyDto,
+  ): Promise<AccessKey> {
+    // Instantiate the right exchange instance
+    const exchangeDto: GetExchangeDto = {
+      key: dto.key,
+      secret: dto.secret,
+      exchange: ExchangeNameEnum[dto.exchange],
+    };
+    const exchange = ExchangeFactory.create(exchangeDto);
+
+    // Ensure the provided API credentials are valid
+    const areCredentialsValid = await exchange.validateCredentials();
+    if (areCredentialsValid === false) {
+      throw new ForbiddenException(
+        'The provided API credentials are incorrect or you have not enabled websocket connections.',
+      );
+    }
+
+    // Ensure the provided API credentials to not give access to sensitive user information
+    const areApiCredentialsLimited =
+      await exchange.validateCredentialLimitations();
+    if (areApiCredentialsLimited === false) {
+      throw new ForbiddenException(
+        'The provided API credentials provide broad permissions.',
+      );
+    }
+
     return this.prisma.accessKey.create({
       data: {
         ...dto,

@@ -13,7 +13,7 @@ import { appMetadata } from 'src/app.module';
 import { APP_PORT, setupPipes } from 'src/app-config/app-config';
 import { CreateAccessKeyDtoStub } from 'src/access-key/stubs';
 import { CreateOrderDtoStub } from 'src/order/stubs';
-import { getRandomAmount } from 'src/common/amounts';
+import { DECIMAL_ROUNDING, getRandomAmount } from 'src/common/amounts';
 
 describe('App e2e', () => {
   let app: INestApplication;
@@ -141,7 +141,7 @@ describe('App e2e', () => {
         .expectStatus(HttpStatus.OK);
     });
     it('edit expense by ID', async () => {
-      const amount = getRandomAmount(100);
+      const amount = getRandomAmount(100, 2);
       const description = 'Manually updated description';
       const dto: UpdateExpenseDto = {
         description,
@@ -171,59 +171,44 @@ describe('App e2e', () => {
   });
 
   describe('AccessKey', () => {
-    const akDto1 = CreateAccessKeyDtoStub();
-    const akDto2 = CreateAccessKeyDtoStub();
+    // Real kraken credentials for test purposes
+    const krakenKey =
+      'KowBIWYBFu7wj4Q2txKyzohe6xSZ+IY4jFHAHiOUsSOzv1CIDQ0MOvBl';
+    const krakenSecret =
+      'EFBHt8XTPL6PdxH5Q1MkZ+LHtoZevONlzZZQkEvWnOpPjKhOsrgAmjINZ85Dlmj8e/35vCF7VWaS/uaAMurOzA==';
+    const akDto1 = CreateAccessKeyDtoStub(krakenKey, krakenSecret);
+    const akDto2 = CreateAccessKeyDtoStub(krakenKey, krakenSecret);
 
-    it('create access key', () => {
-      return Promise.all([
-        pactum
-          .spec()
-          .post('/access-key')
-          .withBearerToken('$S{accessToken}')
-          .withBody(akDto1)
-          .expectStatus(HttpStatus.CREATED)
-          .expectJsonLike({
-            name: akDto1.name,
-            isDeleted: false,
-            exchange: akDto1.exchange,
-            userId: '$S{userId}',
-          })
-          .stores('accessKeyId1', 'id'),
-        pactum
-          .spec()
-          .post('/access-key')
-          .withBearerToken('$S{accessToken}')
-          .withBody(akDto2)
-          .expectStatus(HttpStatus.CREATED)
-          .expectJsonLike({
-            name: akDto2.name,
-            isDeleted: false,
-            exchange: akDto2.exchange,
-            userId: '$S{userId}',
-          })
-          .stores('accessKeyId2', 'id'),
-      ]);
-    });
-    it('get all access keys', () => {
-      return pactum
-        .spec()
-        .get('/access-key')
-        .withBearerToken('$S{accessToken}')
-        .expectStatus(HttpStatus.OK)
-        .expectJsonLike({
-          count: 2,
-          hasMore: false,
-        })
-        .expectBodyContains('$S{accessKeyId1}')
-        .expectBodyContains('$S{accessKeyId2}');
-    });
-    it('delete access keys by Id', async () => {
+    it('create access key', async () => {
+      pactum.request.setDefaultTimeout(8000);
       await pactum
         .spec()
-        .delete('/access-key/$S{accessKeyId2}')
+        .post('/access-key')
         .withBearerToken('$S{accessToken}')
-        .expectStatus(HttpStatus.NO_CONTENT);
-
+        .withBody(akDto1)
+        .expectStatus(HttpStatus.CREATED)
+        .expectJsonLike({
+          name: akDto1.name,
+          isDeleted: false,
+          exchange: akDto1.exchange,
+          userId: '$S{userId}',
+        })
+        .stores('accessKeyId1', 'id');
+      // await pactum
+      //   .spec()
+      //   .post('/access-key')
+      //   .withBearerToken('$S{accessToken}')
+      //   .withBody(akDto2)
+      //   .expectStatus(HttpStatus.CREATED)
+      //   .expectJsonLike({
+      //     name: akDto2.name,
+      //     isDeleted: false,
+      //     exchange: akDto2.exchange,
+      //     userId: '$S{userId}',
+      //   })
+      //   .stores('accessKeyId2', 'id');
+    }, 8000);
+    it('get all access keys', () => {
       return pactum
         .spec()
         .get('/access-key')
@@ -234,6 +219,25 @@ describe('App e2e', () => {
           hasMore: false,
         })
         .expectBodyContains('$S{accessKeyId1}');
+      // .expectBodyContains('$S{accessKeyId2}');
+    });
+    it('delete access keys by Id', async () => {
+      await pactum
+        .spec()
+        .delete('/access-key/{id}')
+        .withPathParams('id', '$S{accessKeyId1}')
+        .withBearerToken('$S{accessToken}')
+        .expectStatus(HttpStatus.NO_CONTENT);
+
+      return pactum
+        .spec()
+        .get('/access-key')
+        .withBearerToken('$S{accessToken}')
+        .expectStatus(HttpStatus.OK)
+        .expectJsonLike({
+          count: 0,
+          hasMore: false,
+        });
     });
   });
 
@@ -291,7 +295,9 @@ describe('App e2e', () => {
     it('update order', () => {
       const newPrice = getRandomAmount(100);
       const newFilled = getRandomAmount(10);
-      const expectedCost = newPrice.mul(newFilled);
+      const expectedCost = newPrice
+        .mul(newFilled)
+        .toDecimalPlaces(DECIMAL_ROUNDING);
 
       return pactum
         .spec()

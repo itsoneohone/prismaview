@@ -1,8 +1,8 @@
 import {
-  OrderCurrency,
-  OrderSide,
-  OrderStatus,
-  OrderType,
+  OrderCurrencyEnum,
+  OrderSideEnum,
+  OrderStatusEnum,
+  OrderTypeEnum,
 } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import {
@@ -28,21 +28,21 @@ export class CreateOrderDto {
   @IsNotEmpty()
   datetime: Date;
 
-  @IsEnum(OrderStatus)
+  @IsEnum(OrderStatusEnum)
   @IsNotEmpty()
-  status: OrderStatus;
+  status: OrderStatusEnum;
 
   @IsString()
   @IsNotEmpty()
   symbol: string;
 
-  @IsEnum(OrderType)
+  @IsEnum(OrderTypeEnum)
   @IsNotEmpty()
-  type: OrderType;
+  type: OrderTypeEnum;
 
-  @IsEnum(OrderSide)
+  @IsEnum(OrderSideEnum)
   @IsNotEmpty()
-  side: OrderSide;
+  side: OrderSideEnum;
 
   @IsDecimal()
   @IsNotEmpty()
@@ -62,9 +62,9 @@ export class CreateOrderDto {
   @IsNotEmpty()
   fee: Decimal;
 
-  @IsEnum(OrderCurrency)
+  @IsEnum(OrderCurrencyEnum)
   @IsNotEmpty()
-  currency: OrderCurrency;
+  currency: OrderCurrencyEnum;
 }
 
 // Bitstamp

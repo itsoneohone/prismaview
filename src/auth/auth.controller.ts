@@ -13,7 +13,7 @@ import { AuthService } from './auth.service';
 import { AuthDto } from './dto';
 import { UserSession } from './types';
 import { PublicRoute } from './decorators';
-import { Role } from '@prisma/client';
+import { RoleEnum } from '@prisma/client';
 import { Response } from 'express';
 
 @PublicRoute()
@@ -48,7 +48,7 @@ export class AuthController {
   private serializeSession(
     id: number,
     email: string,
-    role: Role,
+    role: RoleEnum,
     session: UserSession,
   ) {
     session.user = {

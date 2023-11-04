@@ -1,10 +1,7 @@
 import { ExchangeNameEnum } from '@prisma/client';
 import { IsEnum, IsString } from 'class-validator';
 
-export class CreateAccessKeyDto {
-  @IsString()
-  name: string;
-
+export class GetExchangeDto {
   @IsString()
   key: string;
 

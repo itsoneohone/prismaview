@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker/locale/af_ZA';
-import { Expense, Role } from '@prisma/client';
+import { Expense, RoleEnum } from '@prisma/client';
 import { Decimal } from 'src/common/amounts';
 
 const date = new Date();
@@ -14,7 +14,7 @@ export const UserStub = (userId?: number) => {
     lastName: faker.person.lastName(),
     initialBalance,
     currentBalance: initialBalance * 0.9,
-    role: Role.USER,
+    role: RoleEnum.USER,
   };
 };
 export const userStubStatic = UserStub();

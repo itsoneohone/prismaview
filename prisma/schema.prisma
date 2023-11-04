@@ -17,7 +17,7 @@ model User {
   lastName       String?
   currentBalance Decimal     @default(2000) @db.Decimal(10, 2)
   initialBalance Decimal     @default(2000) @db.Decimal(10, 2)
-  role           Role        @default(USER)
+  role           RoleEnum    @default(USER)
   expenses       Expense[]
   AccessKey      AccessKey[]
   Order          Order[]
@@ -39,20 +39,20 @@ model Expense {
   @@map("expense")
 }
 
-enum Role {
+enum RoleEnum {
   USER
   ADMIN
 }
 
 model AccessKey {
-  id        Int      @id @default(autoincrement())
-  name      String   @db.VarChar(128)
-  key       String   @db.VarChar(256)
-  secret    String   @db.VarChar(256)
-  exchange  Exchange
-  isDeleted Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        Int              @id @default(autoincrement())
+  name      String           @db.VarChar(128)
+  key       String           @db.VarChar(256)
+  secret    String           @db.VarChar(256)
+  exchange  ExchangeNameEnum @default(KRAKEN)
+  isDeleted Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
 
   userId Int
   user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -61,31 +61,31 @@ model AccessKey {
   @@map("access_key")
 }
 
-enum Exchange {
+enum ExchangeNameEnum {
   BITSTAMP
   KRAKEN
 }
 
 model Order {
-  id        Int            @id @default(autoincrement())
+  id        Int                @id @default(autoincrement())
   orderId   String?
   timestamp BigInt
   datetime  DateTime
-  status    OrderStatus
+  status    OrderStatusEnum    @default(CLOSED)
   symbol    String
-  type      OrderType
-  side      OrderSide
-  price     Decimal        @db.Decimal(20, 8)
+  type      OrderTypeEnum      @default(MARKET)
+  side      OrderSideEnum      @default(BUY)
+  price     Decimal            @db.Decimal(20, 8)
   // actual order amount filled
-  filled    Decimal        @db.Decimal(20, 8)
+  filled    Decimal            @db.Decimal(20, 8)
   // filled * price
-  cost      Decimal        @db.Decimal(20, 8)
-  fee       Decimal        @db.Decimal(16, 8)
-  currency  OrderCurrency
-  createdBy OrderCreatedBy @default(USER)
+  cost      Decimal            @db.Decimal(20, 8)
+  fee       Decimal            @db.Decimal(16, 8)
+  currency  OrderCurrencyEnum  @default(USD)
+  createdBy OrderCreatedByEnum @default(USER)
   rawData   Json?
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
 
   userId Int
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -96,18 +96,18 @@ model Order {
   @@map("order")
 }
 
-enum OrderCreatedBy {
+enum OrderCreatedByEnum {
   USER
   SCRIPT
 }
 
-enum OrderCurrency {
+enum OrderCurrencyEnum {
   EUR
   GBP
   USD
 }
 
-enum OrderStatus {
+enum OrderStatusEnum {
   PENDING
   OPEN
   CLOSED
@@ -115,12 +115,12 @@ enum OrderStatus {
   EXPIRED
 }
 
-enum OrderType {
+enum OrderTypeEnum {
   LIMIT
   MARKET
 }
 
-enum OrderSide {
+enum OrderSideEnum {
   BUY
   SELL
 }

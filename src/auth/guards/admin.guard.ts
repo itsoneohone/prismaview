@@ -8,7 +8,7 @@ import { Request } from 'express';
 import { Observable } from 'rxjs';
 import { UserSession } from '../types';
 import { Reflector } from '@nestjs/core';
-import { Role } from '@prisma/client';
+import { RoleEnum } from '@prisma/client';
 
 @Injectable()
 export class AdminGuard implements CanActivate {
@@ -30,7 +30,7 @@ export class AdminGuard implements CanActivate {
     const request = context.switchToHttp().getRequest() as Request;
     const session = request.session as UserSession;
 
-    if (session.user.role !== Role.ADMIN) {
+    if (session.user.role !== RoleEnum.ADMIN) {
       throw new UnauthorizedException('Reserved for admins');
     }
 

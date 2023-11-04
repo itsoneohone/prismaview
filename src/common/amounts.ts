@@ -9,8 +9,9 @@ export const Decimal = Prisma.Decimal.set({ rounding: DECIMAL_ROUNDING });
  * @param maxValue
  * @returns
  */
-export const getRandomAmount = (maxValue: number) => {
-  return new Decimal(Math.random() * maxValue).toDecimalPlaces(
-    DECIMAL_ROUNDING,
-  );
+export const getRandomAmount = (maxValue: number, rounding?: number) => {
+  if (!rounding) {
+    rounding = DECIMAL_ROUNDING;
+  }
+  return new Decimal(Math.random() * maxValue).toDecimalPlaces(rounding);
 };

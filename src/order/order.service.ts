@@ -7,27 +7,29 @@ import {
 import {
   version as ccxtVersion,
   exchanges as ccxtExchanges,
-  kraken,
   bitstamp,
 } from 'ccxt';
 import { ConfigService } from '@nestjs/config';
 import { sleep } from 'src/common/utils';
-import { EMPTY, catchError, delay, expand, from, reduce, tap } from 'rxjs';
+import { EMPTY, catchError, delay, expand, reduce, tap } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { AxiosError } from 'axios';
 import { CreateOrderDto, UpdateOrderDto } from 'src/order/dto';
 import { PaginateDto, PaginateResultDto } from 'src/common/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Order, Prisma } from '@prisma/client';
+import { ExchangeNameEnum, Order, Prisma } from '@prisma/client';
 import {
   SEARCH_LIMIT,
   preparePaginateResultDto,
 } from 'src/common/search-utils';
 import { DECIMAL_ROUNDING, Decimal } from 'src/common/amounts';
+import { ExchangeFactory } from 'src/common/exchange/exchange.factory';
+import { GetExchangeDto } from 'src/common/exchange/dto';
+import { KrakenExchange } from 'src/common/exchange/kraken-exchange';
 
 @Injectable()
 export class OrderService {
-  private exchange: kraken;
+  private krakenExchange;
   private bitstampExchange: bitstamp;
   private logger = new Logger(OrderService.name);
   constructor(
@@ -35,25 +37,21 @@ export class OrderService {
     private httpService: HttpService,
     private prisma: PrismaService,
   ) {
-    this.exchange = new kraken({
-      apiKey: this.config.getOrThrow('KRAKEN_API_KEY'),
+    const krakenDto: GetExchangeDto = {
+      key: this.config.getOrThrow('KRAKEN_API_KEY'),
       secret: this.config.getOrThrow('KRAKEN_SECRET'),
-    });
-    try {
-      this.exchange.checkRequiredCredentials();
-    } catch (err) {
-      throw new ForbiddenException(err);
-    }
+      exchange: ExchangeNameEnum.KRAKEN,
+    };
+    this.krakenExchange = ExchangeFactory.create(krakenDto) as KrakenExchange;
+    // this.krakenExchange.exchange = new kraken({
+    //   apiKey: this.config.getOrThrow('KRAKEN_API_KEY'),
+    //   secret: this.config.getOrThrow('KRAKEN_SECRET'),
+    // });
 
     this.bitstampExchange = new bitstamp({
       apiKey: this.config.getOrThrow('BITSTAMP_API_KEY'),
       secret: this.config.getOrThrow('BITSTAMP_SECRET'),
     });
-    try {
-      const status = this.bitstampExchange.checkRequiredCredentials();
-    } catch (err) {
-      throw new ForbiddenException(err);
-    }
   }
 
   _prepareAPIEndpoint(page) {
@@ -82,6 +80,9 @@ export class OrderService {
           throw `An error occurred (${error.response.data})`;
         }),
         tap(() => console.log(`  - Fetched page ${page}`)),
+        tap(() => console.log(`  About to sleep for 60`)),
+        delay(600000),
+        tap(() => console.log(`  Slept for 60`)),
         expand((res) => {
           if (res.data.next && page < 3) {
             page += 1;
@@ -155,21 +156,23 @@ export class OrderService {
   }
 
   async exchangeSupports() {
-    const exchange = this.bitstampExchange;
-    console.log({
-      requiredCredentials: exchange.requiredCredentials,
-      enableRateLimit: exchange.enableRateLimit,
-      api: exchange.api.private,
-    });
     const lookFor = 'order';
-    return Object.keys(exchange.has).reduce((_supports, key) => {
-      if (exchange.has[key]) {
-        if ((lookFor && key.toLowerCase().includes(lookFor)) || !lookFor) {
-          _supports[key] = exchange.has[key];
-        }
-      }
-      return _supports;
-    }, {});
+    return this.krakenExchange.validateCredentialLimitations();
+    // const exchange = this.bitstampExchange;
+    // console.log({
+    //   requiredCredentials: exchange.requiredCredentials,
+    //   enableRateLimit: exchange.enableRateLimit,
+    //   api: exchange.api.private,
+    // });
+
+    // return Object.keys(exchange.has).reduce((_supports, key) => {
+    //   if (exchange.has[key]) {
+    //     if ((lookFor && key.toLowerCase().includes(lookFor)) || !lookFor) {
+    //       _supports[key] = exchange.has[key];
+    //     }
+    //   }
+    //   return _supports;
+    // }, {});
   }
 
   async fetchKrakenOrders() {
@@ -191,22 +194,27 @@ export class OrderService {
     //   offset,
     //   sort: 'asc',
     // });
-    // const trades = await this.exchange.fetchMyTrades(symbol, since, limit, {
+    // const trades = await this.krakenExchange.exchange.fetchMyTrades(symbol, since, limit, {
     //   start: start / 1000,
     //   end: end / 1000,
     // });
-    // const trades = await this.exchange.privatePostTradesHistory({
+    // const trades = await this.krakenExchange.exchange.privatePostTradesHistory({
     //   start: start / 1000,
     //   end: end / 1000,
     // });
     // return { trades };
-    const orders = await this.exchange.fetchClosedOrders(symbol, since, limit, {
-      start: start / 1000,
-      end: end / 1000,
-      trades: true,
-    });
+    const orders = await this.krakenExchange.exchange.fetchClosedOrders(
+      symbol,
+      since,
+      limit,
+      {
+        start: start / 1000,
+        end: end / 1000,
+        trades: true,
+      },
+    );
 
-    // const orders = await this.exchange.privatePostClosedOrders({
+    // const orders = await this.krakenExchange.exchange.privatePostClosedOrders({
     //   start: start / 1000,
     //   end: end / 1000,
     //   trades: true,
@@ -223,7 +231,7 @@ export class OrderService {
     // }, {});
 
     // return {
-    //   totalCount: this.exchange.last_json_response.result.count,
+    //   totalCount: this.krakenExchange.exchange.last_json_response.result.count,
     //   count: orders.length,
     //   closedOrdersCount: allOrders['closed']?.length,
     //   closedOrders: allOrders['closed'],
@@ -271,7 +279,7 @@ export class OrderService {
     // }, {});
 
     // return {
-    //   totalCount: this.exchange.last_json_response.result.count,
+    //   totalCount: this.krakenExchange.exchange.last_json_response.result.count,
     //   count: orders.length,
     //   closedOrdersCount: allOrders['closed']?.length,
     //   closedOrders: allOrders['closed'],
@@ -418,4 +426,6 @@ export class OrderService {
 
     return preparePaginateResultDto(orders, count, paginate);
   }
+
+  async syncOrders() {}
 }
