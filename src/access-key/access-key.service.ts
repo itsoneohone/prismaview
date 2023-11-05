@@ -53,10 +53,12 @@ export class AccessKeyService {
     return preparePaginateResultDto(accessKeys, count, paginate);
   }
 
-  async createApiKey(
-    userId: number,
-    dto: CreateAccessKeyDto,
-  ): Promise<AccessKey> {
+  /**
+   * Validate whether the API credentials are correct and do not provide broad permissions.
+   *
+   * @param dto CreateAccessKeyDto
+   */
+  async validateApiCredentials(dto: CreateAccessKeyDto) {
     // Instantiate the right exchange instance
     const exchangeDto: GetExchangeDto = {
       key: dto.key,
@@ -81,6 +83,13 @@ export class AccessKeyService {
         'The provided API credentials provide broad permissions.',
       );
     }
+  }
+
+  async createApiKey(
+    userId: number,
+    dto: CreateAccessKeyDto,
+  ): Promise<AccessKey> {
+    await this.validateApiCredentials(dto);
 
     return this.prisma.accessKey.create({
       data: {

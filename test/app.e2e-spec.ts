@@ -14,16 +14,20 @@ import { APP_PORT, setupPipes } from 'src/app-config/app-config';
 import { CreateAccessKeyDtoStub } from 'src/access-key/stubs';
 import { CreateOrderDtoStub } from 'src/order/stubs';
 import { DECIMAL_ROUNDING, getRandomAmount } from 'src/common/amounts';
+import { AccessKeyService } from 'src/access-key/access-key.service';
+import { access } from 'fs';
 
 describe('App e2e', () => {
   let app: INestApplication;
   let prisma: PrismaService;
+  let accessKeyService: AccessKeyService;
 
   beforeAll(async () => {
     const module = await Test.createTestingModule(appMetadata).compile();
     app = module.createNestApplication();
 
     prisma = app.get(PrismaService);
+    accessKeyService = app.get(AccessKeyService);
 
     // Set up pipes
     setupPipes(app);
@@ -179,36 +183,66 @@ describe('App e2e', () => {
     const akDto1 = CreateAccessKeyDtoStub(krakenKey, krakenSecret);
     const akDto2 = CreateAccessKeyDtoStub(krakenKey, krakenSecret);
 
+    beforeEach(() => {
+      jest
+        .spyOn(accessKeyService, 'validateApiCredentials')
+        .mockImplementation(() => Promise.resolve());
+    });
+    afterAll(() => {
+      jest.resetAllMocks();
+    });
+
     it('create access key', async () => {
-      pactum.request.setDefaultTimeout(8000);
+      await Promise.all([
+        pactum
+          .spec()
+          .post('/access-key')
+          .withBearerToken('$S{accessToken}')
+          .withBody(akDto1)
+          .expectStatus(HttpStatus.CREATED)
+          .expectJsonLike({
+            name: akDto1.name,
+            isDeleted: false,
+            exchange: akDto1.exchange,
+            userId: '$S{userId}',
+          })
+          .stores('accessKeyId1', 'id'),
+        pactum
+          .spec()
+          .post('/access-key')
+          .withBearerToken('$S{accessToken}')
+          .withBody(akDto2)
+          .expectStatus(HttpStatus.CREATED)
+          .expectJsonLike({
+            name: akDto2.name,
+            isDeleted: false,
+            exchange: akDto2.exchange,
+            userId: '$S{userId}',
+          })
+          .stores('accessKeyId2', 'id'),
+      ]);
+    });
+    it('get all access keys', () => {
+      return pactum
+        .spec()
+        .get('/access-key')
+        .withBearerToken('$S{accessToken}')
+        .expectStatus(HttpStatus.OK)
+        .expectJsonLike({
+          count: 2,
+          hasMore: false,
+        })
+        .expectBodyContains('$S{accessKeyId1}')
+        .expectBodyContains('$S{accessKeyId2}');
+    });
+    it('delete access keys by Id', async () => {
       await pactum
         .spec()
-        .post('/access-key')
+        .delete('/access-key/{id}')
+        .withPathParams('id', '$S{accessKeyId2}')
         .withBearerToken('$S{accessToken}')
-        .withBody(akDto1)
-        .expectStatus(HttpStatus.CREATED)
-        .expectJsonLike({
-          name: akDto1.name,
-          isDeleted: false,
-          exchange: akDto1.exchange,
-          userId: '$S{userId}',
-        })
-        .stores('accessKeyId1', 'id');
-      // await pactum
-      //   .spec()
-      //   .post('/access-key')
-      //   .withBearerToken('$S{accessToken}')
-      //   .withBody(akDto2)
-      //   .expectStatus(HttpStatus.CREATED)
-      //   .expectJsonLike({
-      //     name: akDto2.name,
-      //     isDeleted: false,
-      //     exchange: akDto2.exchange,
-      //     userId: '$S{userId}',
-      //   })
-      //   .stores('accessKeyId2', 'id');
-    }, 8000);
-    it('get all access keys', () => {
+        .expectStatus(HttpStatus.NO_CONTENT);
+
       return pactum
         .spec()
         .get('/access-key')
@@ -219,25 +253,6 @@ describe('App e2e', () => {
           hasMore: false,
         })
         .expectBodyContains('$S{accessKeyId1}');
-      // .expectBodyContains('$S{accessKeyId2}');
-    });
-    it('delete access keys by Id', async () => {
-      await pactum
-        .spec()
-        .delete('/access-key/{id}')
-        .withPathParams('id', '$S{accessKeyId1}')
-        .withBearerToken('$S{accessToken}')
-        .expectStatus(HttpStatus.NO_CONTENT);
-
-      return pactum
-        .spec()
-        .get('/access-key')
-        .withBearerToken('$S{accessToken}')
-        .expectStatus(HttpStatus.OK)
-        .expectJsonLike({
-          count: 0,
-          hasMore: false,
-        });
     });
   });
 
