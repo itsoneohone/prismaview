@@ -93,6 +93,7 @@ model Order {
   accessKeyId Int?
   accessKey   AccessKey? @relation(fields: [accessKeyId], references: [id], onDelete: Cascade)
 
+  @@index([datetime])
   @@map("order")
 }
 

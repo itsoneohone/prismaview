@@ -11,13 +11,22 @@ import {
 } from 'ccxt';
 import { ConfigService } from '@nestjs/config';
 import { sleep } from 'src/common/utils';
-import { EMPTY, catchError, delay, expand, reduce, tap } from 'rxjs';
+import { EMPTY, catchError, delay, expand, map, reduce, tap } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { AxiosError } from 'axios';
 import { CreateOrderDto, UpdateOrderDto } from 'src/order/dto';
 import { PaginateDto, PaginateResultDto } from 'src/common/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { ExchangeNameEnum, Order, Prisma } from '@prisma/client';
+import {
+  AccessKey,
+  ExchangeNameEnum,
+  Order,
+  OrderCurrencyEnum,
+  OrderSideEnum,
+  OrderStatusEnum,
+  OrderTypeEnum,
+  Prisma,
+} from '@prisma/client';
 import {
   SEARCH_LIMIT,
   preparePaginateResultDto,
@@ -26,11 +35,12 @@ import { DECIMAL_ROUNDING, Decimal } from 'src/common/amounts';
 import { ExchangeFactory } from 'src/common/exchange/exchange.factory';
 import { GetExchangeDto } from 'src/common/exchange/dto';
 import { KrakenExchange } from 'src/common/exchange/kraken-exchange';
+import { BitstampExchange } from 'src/common/exchange/bitstamp-exchange';
 
 @Injectable()
 export class OrderService {
   private krakenExchange;
-  private bitstampExchange: bitstamp;
+  private bitstampExchange;
   private logger = new Logger(OrderService.name);
   constructor(
     private config: ConfigService,
@@ -43,15 +53,15 @@ export class OrderService {
       exchange: ExchangeNameEnum.KRAKEN,
     };
     this.krakenExchange = ExchangeFactory.create(krakenDto) as KrakenExchange;
-    // this.krakenExchange.exchange = new kraken({
-    //   apiKey: this.config.getOrThrow('KRAKEN_API_KEY'),
-    //   secret: this.config.getOrThrow('KRAKEN_SECRET'),
-    // });
 
-    this.bitstampExchange = new bitstamp({
-      apiKey: this.config.getOrThrow('BITSTAMP_API_KEY'),
+    const BitstampDto: GetExchangeDto = {
+      key: this.config.getOrThrow('BITSTAMP_API_KEY'),
       secret: this.config.getOrThrow('BITSTAMP_SECRET'),
-    });
+      exchange: ExchangeNameEnum.BITSTAMP,
+    };
+    this.bitstampExchange = ExchangeFactory.create(
+      krakenDto,
+    ) as BitstampExchange;
   }
 
   _prepareAPIEndpoint(page) {
@@ -203,14 +213,17 @@ export class OrderService {
     //   end: end / 1000,
     // });
     // return { trades };
+    // https://docs.kraken.com/rest/#tag/Account-Data/operation/getClosedOrders
     const orders = await this.krakenExchange.exchange.fetchClosedOrders(
       symbol,
       since,
       limit,
       {
-        start: start / 1000,
-        end: end / 1000,
+        // start: start / 1000,
+        // end: end / 1000,
         trades: true,
+        // ofs: 49,
+        start: 'OI74LJ-5WDB3-ZFC7XT',
       },
     );
 
@@ -258,7 +271,7 @@ export class OrderService {
     //   offset,
     //   sort: 'asc',
     // });
-    const orders = await this.bitstampExchange.fetchMyTrades(
+    const orders = await this.bitstampExchange.exchange.fetchMyTrades(
       symbol,
       start,
       limit,
@@ -427,5 +440,71 @@ export class OrderService {
     return preparePaginateResultDto(orders, count, paginate);
   }
 
-  async syncOrders() {}
+  /**
+   * Use an access key credentials to instantiate the right Exchange class
+   *
+   * @param accessKey AccessKey
+   * @returns
+   */
+  private getExchange(accessKey: AccessKey) {
+    const dto: GetExchangeDto = {
+      key: accessKey.key,
+      secret: accessKey.secret,
+      exchange: ExchangeNameEnum[accessKey.exchange],
+    };
+    return ExchangeFactory.create(dto);
+  }
+
+  // https://docs.kraken.com/rest/#tag/Account-Data/operation/getClosedOrders
+  async syncOrders(userId: number, accessKey: AccessKey) {
+    // Get the last order of the user
+    const lastOrder = await this.prisma.order.findFirst({
+      select: { id: true, orderId: true },
+      where: { userId },
+      orderBy: {
+        id: 'desc',
+      },
+    });
+
+    const lastOrderId = lastOrder?.orderId ? lastOrder.orderId : undefined;
+    // const lastOrderId = undefined;
+    const exchange = this.getExchange(accessKey);
+
+    const prepareOrderDto = (userId, item): CreateOrderDto => {
+      return {
+        orderId: item.id,
+        timestamp: item.timestamp,
+        datetime: item.datetime,
+        status: OrderStatusEnum[item.status.toUpperCase()],
+        symbol: item.symbol,
+        type: OrderTypeEnum[item.type.toUpperCase()],
+        side: OrderSideEnum[item.side.toUpperCase()],
+        price: item.price,
+        filled: item.filled || item.amount,
+        cost: item.cost,
+        fee: item.fee.cost,
+        currency: OrderCurrencyEnum[item.fee.currency.toUpperCase()],
+        accessKeyId: accessKey.id,
+        userId,
+        rawData: item,
+      };
+    };
+
+    return exchange.syncOrders(lastOrderId).pipe(
+      map((res) => {
+        const dtos = res.reduce((all, curr) => {
+          // return prepareOrderDto(userId, curr);
+          all.push(prepareOrderDto(userId, curr));
+          return all;
+        }, []);
+
+        return dtos;
+        // console.log({ dtos });
+        // return this.prisma.order.createMany({
+        //   data: dtos,
+        //   skipDuplicates: true,
+        // });
+      }),
+    );
+  }
 }

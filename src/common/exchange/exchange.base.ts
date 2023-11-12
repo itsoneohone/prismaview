@@ -1,7 +1,11 @@
+import { Logger } from '@nestjs/common';
+import { Observable } from 'rxjs';
+
 export class BaseExchange {
+  protected logger;
   protected name: string;
   // Limit the requests to the exchange - e.g. If set to 2000ms, it will allow one request every 2 secs.
-  protected rateLimitProtection = 2000;
+  protected requestDelay = 2000;
   public exchange;
   readonly apiKey: string;
   readonly apiSecret: string;
@@ -9,6 +13,9 @@ export class BaseExchange {
   constructor(key: string, secret: string) {
     this.apiKey = key;
     this.apiSecret = secret;
+
+    // Set up the logger
+    this.logger = new Logger(this.name);
   }
 
   getName() {
@@ -32,7 +39,7 @@ export class BaseExchange {
     }, {});
   }
 
-  syncOrders() {
+  syncOrders(lastOrderId: string | undefined): Observable<any> {
     throw new Error('The child class must implement the fn "syncOrders()",');
   }
 

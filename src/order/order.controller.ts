@@ -6,10 +6,15 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseIntPipe,
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
+import { AccessKey } from '@prisma/client';
+import { GetAccessKeyFromReq } from 'src/access-key/decorators';
+import { AccessKeyOwnerGuard } from 'src/access-key/guards';
 import { GetUserFromJwt } from 'src/auth/decorators';
 import { PaginateDto } from 'src/common/dto';
 import { CreateOrderDto, UpdateOrderDto } from 'src/order/dto';
@@ -27,8 +32,8 @@ export class OrderController {
   @Get('ccxt')
   ccxt() {
     // return this.orderService.fetchΒitstampOrders();
-    // return this.orderService.fetchKrakenOrders();
-    return this.orderService.paginate2();
+    return this.orderService.fetchKrakenOrders();
+    // return this.orderService.paginate2();
   }
 
   @Post()
@@ -63,5 +68,15 @@ export class OrderController {
     @Query() paginate: PaginateDto,
   ) {
     return this.orderService.getOrders(userId, paginate);
+  }
+
+  @Post('sync')
+  @UseGuards(AccessKeyOwnerGuard)
+  syncOrders(
+    @GetUserFromJwt('id') userId: number,
+    @GetAccessKeyFromReq() accessKey: AccessKey,
+    @Body('accessKeyId', ParseIntPipe) accessKeyId: number,
+  ) {
+    return this.orderService.syncOrders(userId, accessKey);
   }
 }

@@ -32,6 +32,9 @@ export const CreateOrderDtoStub = (): CreateOrderDto => {
     cost,
     fee,
     currency: OrderCurrencyEnum.EUR,
+    accessKeyId: null,
+    userId: null,
+    rawData: null,
   };
 };
 export const createOrderDtoStubStatic = CreateOrderDtoStub();

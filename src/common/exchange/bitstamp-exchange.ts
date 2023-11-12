@@ -12,6 +12,8 @@ export class BitstampExchange extends BaseExchange {
       apiKey: this.apiKey,
       secret: this.apiSecret,
     });
+    // Respect the exchange's rate limits (https://docs.kraken.com/rest/#section/Rate-Limits)
+    this.requestDelay = 1000;
   }
 
   async validateCredentials() {

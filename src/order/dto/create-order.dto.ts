@@ -65,6 +65,17 @@ export class CreateOrderDto {
   @IsEnum(OrderCurrencyEnum)
   @IsNotEmpty()
   currency: OrderCurrencyEnum;
+
+  @IsNumber()
+  @IsOptional()
+  accessKeyId: number;
+
+  @IsNumber()
+  @IsOptional()
+  userId: number;
+
+  @IsOptional()
+  rawData: string;
 }
 
 // Bitstamp

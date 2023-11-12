@@ -31,6 +31,7 @@ export class AccessKeyService {
 
     const [accessKeys, count] = await Promise.all([
       this.prisma.accessKey.findMany({
+        select: { id: true, name: true, key: true, exchange: true },
         where: {
           userId,
           isDeleted: false,
@@ -91,12 +92,17 @@ export class AccessKeyService {
   ): Promise<AccessKey> {
     await this.validateApiCredentials(dto);
 
-    return this.prisma.accessKey.create({
+    const accessKey = await this.prisma.accessKey.create({
       data: {
         ...dto,
         userId,
       },
     });
+    delete accessKey.secret;
+    delete accessKey.isDeleted;
+    delete accessKey.userId;
+
+    return accessKey;
   }
 
   async deleteApiKeyById(userId: number, id: number) {
