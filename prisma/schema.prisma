@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             Int         @id @default(autoincrement())
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  email          String      @unique
+  hash           String
+  firstName      String?
+  lastName       String?
+  currentBalance Decimal     @default(2000) @db.Decimal(10, 2)
+  initialBalance Decimal     @default(2000) @db.Decimal(10, 2)
+  role           RoleEnum    @default(USER)
+  expenses       Expense[]
+  AccessKey      AccessKey[]
+  Order          Order[]
+
+  @@map("user")
+}
+
+model Expense {
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  title       String
+  description String?
+  date        DateTime
+  userId      Int
+  amount      Decimal  @db.Decimal(10, 2)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("expense")
+}
+
+enum RoleEnum {
+  USER
+  ADMIN
+}
+
+model AccessKey {
+  id        Int              @id @default(autoincrement())
+  name      String           @db.VarChar(128)
+  key       String           @db.VarChar(256)
+  secret    String           @db.VarChar(256)
+  exchange  ExchangeNameEnum @default(KRAKEN)
+  isDeleted Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  userId Int
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Order  Order[]
+
+  @@map("access_key")
+}
+
+enum ExchangeNameEnum {
+  BITSTAMP
+  KRAKEN
+}
+
+model Order {
+  id        Int                @id @default(autoincrement())
+  orderId   String?            @unique()
+  timestamp BigInt
+  datetime  DateTime
+  status    OrderStatusEnum    @default(CLOSED)
+  symbol    String
+  type      OrderTypeEnum      @default(MARKET)
+  side      OrderSideEnum      @default(BUY)
+  price     Decimal            @db.Decimal(20, 8)
+  // actual order amount filled
+  filled    Decimal            @db.Decimal(20, 8)
+  // filled * price
+  cost      Decimal            @db.Decimal(20, 8)
+  fee       Decimal            @db.Decimal(16, 8)
+  currency  OrderCurrencyEnum  @default(USD)
+  createdBy OrderCreatedByEnum @default(USER)
+  rawData   Json?
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  accessKeyId Int?
+  accessKey   AccessKey? @relation(fields: [accessKeyId], references: [id], onDelete: Cascade)
+
+  @@index([datetime])
+  @@index([timestamp])
+  @@map("order")
+}
+
+enum OrderCreatedByEnum {
+  USER
+  SCRIPT
+}
+
+enum OrderCurrencyEnum {
+  EUR
+  GBP
+  USD
+}
+
+enum OrderStatusEnum {
+  PENDING
+  OPEN
+  CLOSED
+  CANCELED
+  EXPIRED
+}
+
+enum OrderTypeEnum {
+  LIMIT
+  MARKET
+}
+
+enum OrderSideEnum {
+  BUY
+  SELL
+}

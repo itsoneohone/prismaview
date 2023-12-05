@@ -1,0 +1,19 @@
+<script>
+  console.log('sign in form');
+  console.log({socket});
+  function handleEmitEvents () {
+    socket.emit('events', { test: 'test' });
+  }
+  function handleEmitIdentity() {
+    socket.emit('identity', 101, (response) => {
+      console.log(`Identity: ${response}`);
+    });
+  }
+</script>
+<section>
+  From server:
+  {{ message }}
+  <hr/>
+  <button onclick="handleEmitEvents()">Emit event</button>
+  <button onclick="handleEmitIdentity()">Emit identity</button>
+</section>
