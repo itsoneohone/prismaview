@@ -21,7 +21,7 @@ export class UpdateOrderDto {
 
   @IsNumber()
   @IsOptional()
-  timestamp: number;
+  timestamp: bigint;
 
   @IsDateString()
   @IsOptional()

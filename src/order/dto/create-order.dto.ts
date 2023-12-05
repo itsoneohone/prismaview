@@ -22,7 +22,7 @@ export class CreateOrderDto {
 
   @IsNumber()
   @IsOptional()
-  timestamp: number;
+  timestamp: bigint;
 
   @IsDateString()
   @IsNotEmpty()

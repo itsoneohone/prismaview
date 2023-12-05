@@ -2,12 +2,13 @@ import { ForbiddenException } from '@nestjs/common';
 import { ExchangeNameEnum } from '@prisma/client';
 import { kraken } from 'ccxt';
 import { EMPTY, catchError, delay, expand, from, reduce, tap } from 'rxjs';
+import { GetExchangeDto } from 'src/common/exchange/dto';
 import { BaseExchange } from 'src/common/exchange/exchange.base';
 
 export class KrakenExchange extends BaseExchange {
   public exchange: kraken;
-  constructor(key: string, secret: string) {
-    super(key, secret);
+  constructor(exchangeDto: GetExchangeDto) {
+    super(exchangeDto);
     this.name = ExchangeNameEnum.KRAKEN;
     this.exchange = new kraken({
       apiKey: this.apiKey,
@@ -53,25 +54,38 @@ export class KrakenExchange extends BaseExchange {
     }
   }
 
+  private _fetchClosedOrders(
+    startDateObj: Date,
+    endDateObj: Date,
+    ofs: number,
+  ) {
+    this.logger.log(
+      `Fetching orders: startDate ${startDateObj.toISOString()} (${
+        startDateObj.getTime() / 1000
+      }), endDate ${endDateObj.toISOString()} (${
+        endDateObj.getTime() / 1000
+      }), offset ${ofs}`,
+    );
+    const symbol = undefined;
+    const since = undefined;
+    const limit = undefined;
+    return this.exchange.fetchClosedOrders(symbol, since, limit, {
+      trades: true,
+      start: startDateObj.getTime() / 1000,
+      end: endDateObj.getTime() / 1000,
+      ofs,
+    });
+  }
+
   /**
    * Sync the orders of a user with his exchange account
    *
    * See API endpoint details here: https://docs.kraken.com/rest/#tag/Account-Data/operation/getClosedOrders
    */
-  syncOrders(lastOrderId: string | undefined) {
+  // You were here, using previously the lastOrder param.
+  syncOrders(startDateObj: Date, endDateObj: Date) {
     // Default kraken API page size
     const pageSize = 50;
-    const _fetchClosedOrders = (startingOrderId: string, ofs: number) => {
-      const symbol = undefined;
-      const since = undefined;
-      const limit = undefined;
-      this.logger.log(`Fetching with startingOrderId: ${startingOrderId}`);
-      return this.exchange.fetchClosedOrders(symbol, since, limit, {
-        trades: true,
-        start: startingOrderId,
-        ofs,
-      });
-    };
 
     this.logger.debug(
       `[START] Sync orders using key "${this.apiKey}" in "${this.name}"`,
@@ -81,7 +95,7 @@ export class KrakenExchange extends BaseExchange {
     let ofs = 0;
     // Request the first page
     const paginationObs = from(
-      Promise.resolve(_fetchClosedOrders(lastOrderId, ofs)),
+      Promise.resolve(this._fetchClosedOrders(startDateObj, endDateObj, ofs)),
     ).pipe(
       catchError((error: any) => {
         this.logger.error(error);
@@ -98,7 +112,7 @@ export class KrakenExchange extends BaseExchange {
       tap(() => this.logger.log(`Slept for ${this.requestDelay / 1000}secs`)),
       // Use expand to recursively request the next pages
       expand((res) => {
-        if (res.length < pageSize || ofs > 0) {
+        if (res.length < pageSize) {
           return EMPTY;
         }
 
@@ -106,14 +120,11 @@ export class KrakenExchange extends BaseExchange {
         page += 1;
         ofs += res.length;
 
-        // The results are sorted in descending order, we fetch results backwards
-        const lastOrder = res[0];
-        this.logger.log(
-          `Fetched ${res.length} order with last order (${lastOrder.id} at ${lastOrder.datetime})`,
-        );
         return from(
-          // Use cursor pagination using the id of the last order
-          Promise.resolve(_fetchClosedOrders(lastOrder.id, ofs)),
+          // Use ofset pagination for a given date window
+          Promise.resolve(
+            this._fetchClosedOrders(startDateObj, endDateObj, ofs),
+          ),
         ).pipe(
           catchError((error: any) => {
             this.logger.error(error);
@@ -133,9 +144,16 @@ export class KrakenExchange extends BaseExchange {
       }),
       tap(() => this.logger.log(`    * Processing page ${page}`)),
       reduce((allOrders, orderPage) => {
-        const orderedres = orderPage.map((i) => {
-          return { dt: i.datetime, orderId: i.id };
+        const allOrdersObj = {};
+        const orderedres = [];
+        console.log('IN REDUCE: ');
+        orderPage.forEach((o) => {
+          orderedres.push({ dt: o.datetime, orderId: o.id });
+          allOrdersObj[o.id] = o;
         });
+        console.log(
+          `Orders count: ${orderedres.length}, page: ${page}, offset: ${ofs}`,
+        );
         console.log({ orderedres });
         return allOrders.concat(orderPage);
       }, []),

@@ -68,7 +68,7 @@ enum ExchangeNameEnum {
 
 model Order {
   id        Int                @id @default(autoincrement())
-  orderId   String?
+  orderId   String?            @unique()
   timestamp BigInt
   datetime  DateTime
   status    OrderStatusEnum    @default(CLOSED)
@@ -94,6 +94,7 @@ model Order {
   accessKey   AccessKey? @relation(fields: [accessKeyId], references: [id], onDelete: Cascade)
 
   @@index([datetime])
+  @@index([timestamp])
   @@map("order")
 }
 

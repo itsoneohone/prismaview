@@ -8,11 +8,11 @@ const exchangeClasses = {
   [ExchangeNameEnum.BITSTAMP]: BitstampExchange,
 };
 export class ExchangeFactory {
-  static create(exchangeData: GetExchangeDto) {
-    const ExchangeClass = exchangeClasses[exchangeData.exchange];
-    const exchange = new ExchangeClass(exchangeData.key, exchangeData.secret);
+  static create(exchangeDto: GetExchangeDto) {
+    const ExchangeClass = exchangeClasses[exchangeDto.exchange];
+    const exchange = new ExchangeClass(exchangeDto);
 
-    switch (exchangeData.exchange) {
+    switch (exchangeDto.exchange) {
       case ExchangeNameEnum.KRAKEN:
         return exchange as KrakenExchange;
       case ExchangeNameEnum.BITSTAMP:

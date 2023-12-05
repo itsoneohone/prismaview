@@ -21,7 +21,7 @@ export const CreateOrderDtoStub = (): CreateOrderDto => {
 
   return {
     orderId: faker.string.uuid(),
-    timestamp: date.getTime(),
+    timestamp: BigInt(date.getTime()),
     datetime: date,
     status: OrderStatusEnum.CLOSED,
     symbol: 'BTC/EUR',
@@ -69,7 +69,7 @@ export const updateOrderStubStatic = OrderStub(_user.id, {
   cost: updateOrderDtoStubStatic.filled
     .mul(updateOrderDtoStubStatic.price)
     .toDecimalPlaces(DECIMAL_ROUNDING),
-  timestamp: updateOrderDtoStubStatic.datetime.getTime(),
+  timestamp: BigInt(updateOrderDtoStubStatic.datetime.getTime()),
 });
 
 export const orderStubs = [orderStubStatic, orderStubStatic2];

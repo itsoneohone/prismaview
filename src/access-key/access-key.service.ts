@@ -59,12 +59,15 @@ export class AccessKeyService {
    *
    * @param dto CreateAccessKeyDto
    */
-  async validateApiCredentials(dto: CreateAccessKeyDto) {
+  async validateApiCredentials(userId: number, dto: CreateAccessKeyDto) {
     // Instantiate the right exchange instance
     const exchangeDto: GetExchangeDto = {
       key: dto.key,
       secret: dto.secret,
       exchange: ExchangeNameEnum[dto.exchange],
+      userId,
+      // The access key has not been created yet, pass a dummy ID
+      accessKeyId: 1,
     };
     const exchange = ExchangeFactory.create(exchangeDto);
 
@@ -90,7 +93,7 @@ export class AccessKeyService {
     userId: number,
     dto: CreateAccessKeyDto,
   ): Promise<AccessKey> {
-    await this.validateApiCredentials(dto);
+    await this.validateApiCredentials(userId, dto);
 
     const accessKey = await this.prisma.accessKey.create({
       data: {
