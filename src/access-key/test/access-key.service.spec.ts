@@ -13,7 +13,6 @@ import {
   SEARCH_LIMIT,
   preparePaginateResultDto,
 } from 'src/common/search-utils';
-import { access } from 'fs';
 
 jest.mock('../../prisma/prisma.service.ts');
 
@@ -21,6 +20,7 @@ describe('AccessKeyService', () => {
   const user = userStubStatic;
   let service: AccessKeyService;
   let prismaService: PrismaService;
+  let validateApiCredentialsSpy;
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({
@@ -43,7 +43,15 @@ describe('AccessKeyService', () => {
     let accessKey;
 
     beforeAll(async () => {
+      validateApiCredentialsSpy = jest
+        .spyOn(service, 'validateApiCredentials')
+        .mockResolvedValue();
+
       accessKey = await service.createApiKey(user.id, accessKeyDto);
+    });
+
+    afterAll(() => {
+      jest.restoreAllMocks();
     });
 
     it('should call prismaService.accessKeys.create()', () => {
@@ -75,6 +83,7 @@ describe('AccessKeyService', () => {
       beforeAll(async () => {
         accessKeysRes = await service.getApiKeys(user.id);
         accessKeys = accessKeysRes.data;
+
         // Fn getApiKeys is expected to return the following result
         expectedAccessKeysRes = preparePaginateResultDto(
           accessKeys,
@@ -87,6 +96,7 @@ describe('AccessKeyService', () => {
         const prismaFn = prismaService.accessKey.findMany;
         expect(prismaFn).toHaveBeenCalled();
         expect(prismaFn).toHaveBeenCalledWith({
+          select: { id: true, name: true, key: true, exchange: true },
           where: {
             userId: user.id,
             isDeleted: false,
@@ -140,6 +150,7 @@ describe('AccessKeyService', () => {
         const prismaFn = prismaService.accessKey.findMany;
         expect(prismaFn).toHaveBeenCalled();
         expect(prismaFn).toHaveBeenCalledWith({
+          select: { id: true, name: true, key: true, exchange: true },
           where: {
             userId: user.id,
             isDeleted: false,
@@ -175,27 +186,28 @@ describe('AccessKeyService', () => {
 
   describe('deleteApiKeyById()', () => {
     // A random Id is used. It doesn't matter because everything is mocked
-    const expenseId = 1;
+    const accessKeyId = 1;
     // Same as the deletedAccessKey, but with `isDeleted = false`
     const accessKey = accessKeyStubStatic;
     let deletedAccessKey;
-    let expectedAccessKeysRes: PaginateResultDto;
 
     beforeAll(async () => {
-      deletedAccessKey = await service.deleteApiKeyById(user.id, expenseId);
+      deletedAccessKey = await service.deleteApiKeyById(user.id, accessKeyId);
     });
 
-    it('should call prismaService.accessKeys.findFirst()', () => {
+    it('should call prismaService.accessKeys.findFirst()', async () => {
       const prismaFn = prismaService.accessKey.findFirst;
+
       expect(prismaFn).toHaveBeenCalled();
       expect(prismaFn).toHaveBeenCalledWith({
         where: {
           userId: user.id,
-          id: expenseId,
+          id: accessKeyId,
           isDeleted: false,
         },
       });
-      expect(prismaFn).toHaveReturnedWith(accessKey);
+      expect(prismaFn).toHaveReturned();
+      await expect(prismaFn).toHaveReturnedWith(accessKey);
     });
 
     it('should call prismaService.accessKeys.update()', () => {
@@ -205,7 +217,7 @@ describe('AccessKeyService', () => {
       expect(prismaFn).toHaveBeenCalledWith({
         where: {
           userId: user.id,
-          id: expenseId,
+          id: accessKeyId,
         },
         data: {
           isDeleted: true,

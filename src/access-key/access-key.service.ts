@@ -103,7 +103,6 @@ export class AccessKeyService {
     });
     delete accessKey.secret;
     delete accessKey.isDeleted;
-    delete accessKey.userId;
 
     return accessKey;
   }

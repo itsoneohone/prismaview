@@ -9,8 +9,8 @@ export const CreateAccessKeyDtoStub = (
 ): CreateAccessKeyDto => {
   return {
     name: faker.hacker.abbreviation(),
-    key: key || faker.string.uuid(),
-    secret: secret || faker.string.uuid(),
+    key: key || faker.string.alphanumeric({ length: 24 }),
+    secret: secret || faker.string.alphanumeric({ length: 24 }),
     exchange: ExchangeNameEnum.KRAKEN,
   };
 };
@@ -20,8 +20,8 @@ export const createAccessKeyDtoStubStatic2 = CreateAccessKeyDtoStub();
 export const AccessKeyStub = (userId?: number, dto?: CreateAccessKeyDto) => {
   return {
     name: dto?.name || faker.hacker.abbreviation(),
-    key: dto?.key || faker.string.uuid(),
-    secret: dto?.secret || faker.string.uuid(),
+    key: dto?.key || faker.string.alphanumeric({ length: 24 }),
+    secret: dto?.secret || faker.string.alphanumeric({ length: 24 }),
     exchange: dto?.exchange || ExchangeNameEnum.KRAKEN,
     userId: userId || 1,
     isDeleted: false,

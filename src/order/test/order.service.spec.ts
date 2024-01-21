@@ -132,8 +132,9 @@ describe('OrderService', () => {
           .mul(updateOrderDto.filled)
           .toDecimalPlaces(DECIMAL_ROUNDING),
       );
-      expect(updatedOrderData.timestamp).toEqual(
-        updateOrderDto.datetime.getTime(),
+      // The timestamp is stored as BigInt
+      expect(updatedOrderData.timestamp.toString()).toEqual(
+        updateOrderDto.datetime.getTime().toString(),
       );
     });
 

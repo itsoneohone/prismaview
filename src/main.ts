@@ -6,7 +6,6 @@ import {
   setupHandlebars,
   APP_PORT,
 } from 'src/app-config/app-config';
-import { Prisma } from '@prisma/client';
 
 /**
  * Create a NestJs Express application

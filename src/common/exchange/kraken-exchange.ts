@@ -27,7 +27,7 @@ export class KrakenExchange extends BaseExchange {
       return true;
     } catch (err) {
       // A PermissionDenied will be thrown if websockets are not enabled on the API credentials
-      if (err.name in ['AuthenticationError', 'PermissionDenied']) {
+      if (['AuthenticationError', 'PermissionDenied'].includes(err.name)) {
         return false;
       }
       throw new ForbiddenException(err);

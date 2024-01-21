@@ -91,7 +91,7 @@ export function setupHandlebars(app: NestExpressApplication) {
  * The solution is described here: https://github.com/GoogleChromeLabs/jsbi/issues/30#issuecomment-1006088574
  */
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-interface BigInt {
+export interface BigInt {
   /** Convert to BigInt to string form in JSON.stringify */
   toJSON: () => string;
 }

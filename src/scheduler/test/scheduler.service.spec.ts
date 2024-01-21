@@ -2,6 +2,7 @@ import { Test } from '@nestjs/testing';
 import { SchedulerService } from '../scheduler.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UsersWithExpensesStub } from '../../user/stubs';
+import { Decimal } from 'src/common/amounts';
 
 jest.mock('../../prisma/prisma.service.ts');
 
@@ -36,14 +37,24 @@ describe.only('SchedulerService', () => {
   });
 
   describe('computeBalances()', () => {
+    let expectedSum;
     let sum;
     beforeAll(async () => {
-      sum = service.getExpensesSum(UsersWithExpensesStub()[0].expenses);
+      const user = UsersWithExpensesStub()[0];
+      const userExpenses = user.expenses;
+      expectedSum = userExpenses.reduce((calculatedSum, expense) => {
+        return calculatedSum.add(expense.amount);
+      }, new Decimal(0));
+      sum = new Decimal(service.getExpensesSum(userExpenses)).toDecimalPlaces(
+        8,
+      );
     });
 
     describe('when called', () => {
       it('return the expenses sum', () => {
-        expect(sum).toEqual(130);
+        // NOTE: The expenses calculation functionaliy is legacy and will be removed.
+        //       Testing with decimals a temp fix.
+        expect(sum).toEqual(expectedSum);
       });
     });
   });

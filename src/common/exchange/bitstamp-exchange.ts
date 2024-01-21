@@ -19,7 +19,7 @@ export class BitstampExchange extends BaseExchange {
 
   async validateCredentials() {
     try {
-      await this.exchange.privatePostWebsocketsToken();
+      const res = await this.exchange.privatePostWebsocketsToken();
       return true;
     } catch (err) {
       if (err.name === 'AuthenticationError') {
@@ -37,9 +37,7 @@ export class BitstampExchange extends BaseExchange {
   async validateCredentialLimitations() {
     try {
       // It should throw an error
-      console.log('BEFORE FETCHING BALANCE');
       await this.exchange.fetchBalance();
-      console.log('AFTER FETCHING BALANCE');
       // These credentials should not be accepted
       return false;
     } catch (err) {
