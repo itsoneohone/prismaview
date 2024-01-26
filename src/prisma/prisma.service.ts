@@ -7,7 +7,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { ENABLE_LOGGING } from 'src/app-config/app-config';
-import { LogDefinition } from '@prisma/client/runtime/library';
+import { LogDefinition } from 'src/prisma/types';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit {
@@ -29,7 +29,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
         },
       },
       log: [...loggingConfig],
-      errorFormat: 'colorless',
+      // errorFormat: 'colorless',
     });
   }
 
