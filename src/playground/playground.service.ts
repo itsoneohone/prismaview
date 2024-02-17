@@ -32,10 +32,10 @@ import { getCryptoExchange } from 'src/lib/exchange/common/utils';
 import { searchHasMoreData } from 'src/common/search-utils';
 
 @Injectable()
-export class OrderPlaygroundService {
+export class PlaygroundService {
   private krakenExchange;
   private bitstampExchange;
-  private logger = new Logger(OrderPlaygroundService.name);
+  private logger = new Logger(PlaygroundService.name);
   constructor(
     private config: ConfigService,
     private httpService: HttpService,

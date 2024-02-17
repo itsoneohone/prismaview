@@ -19,6 +19,7 @@ import { EventsModule } from './events/events.module';
 import { JwtGuard } from 'src/auth/guards/jwt.guard';
 import { HttpModule } from '@nestjs/axios';
 import { AccessKeyModule } from './access-key/access-key.module';
+import { PlaygroundModule } from './playground/playground.module';
 
 export const appMetadata: ModuleMetadata = {
   imports: [
@@ -48,6 +49,7 @@ export const appMetadata: ModuleMetadata = {
         };
       },
     }),
+    PlaygroundModule,
     OrderModule,
     EventsModule,
     AccessKeyModule,

@@ -42,8 +42,8 @@ export class KrakenExchange extends BaseExchange {
   async validateCredentialLimitations() {
     try {
       // It should throw an error
-      const balance = await this.exchange.fetchBalance();
-      console.log({ balance });
+      await this.exchange.fetchBalance();
+
       // These credentials should not be accepted
       return false;
     } catch (err) {
