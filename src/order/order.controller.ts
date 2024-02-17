@@ -13,30 +13,54 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AccessKey } from '@prisma/client';
-import { start } from 'repl';
 import { GetAccessKeyFromReq } from 'src/access-key/decorators';
 import { AccessKeyOwnerGuard } from 'src/access-key/guards';
 import { GetUserFromJwt } from 'src/auth/decorators';
 import { PaginateDto } from 'src/common/dto';
-import { SyncMode } from 'src/common/exchange/exchange.base';
+import { SyncMode } from 'src/lib/exchange/exchange.base';
 import { CreateOrderDto, UpdateOrderDto } from 'src/order/dto';
+import { OrderPlaygroundService } from 'src/order/order.playground.service';
 import { OrderService } from 'src/order/order.service';
 
 @Controller('order')
 export class OrderController {
-  constructor(private orderService: OrderService) {}
+  constructor(
+    private orderService: OrderService,
+    private orderPlaygroundService: OrderPlaygroundService,
+  ) {}
+
+  // ------------------------
+  // Playground routes
+  // ------------------------
+
+  @Get('/access-limited')
+  isAccessLimitedToReporting() {
+    return this.orderPlaygroundService.isAccessLimited();
+  }
 
   @Get('/supports')
   exchangeSupports() {
-    return this.orderService.exchangeSupports();
+    return this.orderPlaygroundService.exchangeSupports();
   }
 
   @Get('ccxt')
   ccxt() {
     // return this.orderService.fetchΒitstampOrders();
-    return this.orderService.fetchKrakenOrders();
+    return this.orderPlaygroundService.fetchKrakenOrders();
     // return this.orderService.paginate2();
   }
+
+  @Get('playground')
+  @UseGuards(AccessKeyOwnerGuard)
+  playground(@GetAccessKeyFromReq() accessKey: AccessKey) {
+    // return this.orderService.fetchΒitstampOrders();
+    return this.orderPlaygroundService.playground(accessKey);
+    // return this.orderService.paginate2();
+  }
+
+  // ------------------------
+  // Public routes
+  // ------------------------
 
   @Post()
   createOrder(

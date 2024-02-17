@@ -1,8 +1,8 @@
 import { ForbiddenException } from '@nestjs/common';
 import { ExchangeNameEnum } from '@prisma/client';
 import { bitstamp } from 'ccxt';
-import { GetExchangeDto } from 'src/common/exchange/dto';
-import { BaseExchange } from 'src/common/exchange/exchange.base';
+import { GetExchangeDto } from 'src/lib/exchange/dto';
+import { BaseExchange } from 'src/lib/exchange/exchange.base';
 
 export class BitstampExchange extends BaseExchange {
   public exchange: bitstamp;

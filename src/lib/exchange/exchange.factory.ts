@@ -1,14 +1,15 @@
 import { ExchangeNameEnum } from '@prisma/client';
-import { BitstampExchange } from 'src/common/exchange/bitstamp-exchange';
-import { GetExchangeDto } from 'src/common/exchange/dto';
-import { KrakenExchange } from 'src/common/exchange/kraken-exchange';
+import { BitstampExchange } from 'src/lib/exchange/bitstamp-exchange';
+import { GetExchangeDto } from 'src/lib/exchange/dto';
+import { KrakenExchange } from 'src/lib/exchange/kraken-exchange';
+import { CryptoExchange } from 'src/lib/exchange/types';
 
 const exchangeClasses = {
   [ExchangeNameEnum.KRAKEN]: KrakenExchange,
   [ExchangeNameEnum.BITSTAMP]: BitstampExchange,
 };
 export class ExchangeFactory {
-  static create(exchangeDto: GetExchangeDto) {
+  static create(exchangeDto: GetExchangeDto): CryptoExchange {
     const ExchangeClass = exchangeClasses[exchangeDto.exchange];
     const exchange = new ExchangeClass(exchangeDto);
 

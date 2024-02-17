@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { GetExchangeDto } from 'src/common/exchange/dto';
+import { GetExchangeDto } from 'src/lib/exchange/dto';
 
 export enum SyncMode {
   ALL = 'ALL',

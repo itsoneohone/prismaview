@@ -2,8 +2,8 @@ import { ForbiddenException } from '@nestjs/common';
 import { ExchangeNameEnum } from '@prisma/client';
 import { kraken } from 'ccxt';
 import { EMPTY, catchError, delay, expand, from, reduce, tap } from 'rxjs';
-import { GetExchangeDto } from 'src/common/exchange/dto';
-import { BaseExchange } from 'src/common/exchange/exchange.base';
+import { GetExchangeDto } from 'src/lib/exchange/dto';
+import { BaseExchange } from 'src/lib/exchange/exchange.base';
 
 export class KrakenExchange extends BaseExchange {
   public exchange: kraken;
@@ -42,8 +42,8 @@ export class KrakenExchange extends BaseExchange {
   async validateCredentialLimitations() {
     try {
       // It should throw an error
-      await this.exchange.fetchBalance();
-
+      const balance = await this.exchange.fetchBalance();
+      console.log({ balance });
       // These credentials should not be accepted
       return false;
     } catch (err) {
@@ -69,6 +69,7 @@ export class KrakenExchange extends BaseExchange {
     const symbol = undefined;
     const since = undefined;
     const limit = undefined;
+    // See API endpoint details here: https://docs.kraken.com/rest/#tag/Account-Data/operation/getClosedOrders
     return this.exchange.fetchClosedOrders(symbol, since, limit, {
       trades: true,
       start: startDateObj.getTime() / 1000,
@@ -80,9 +81,8 @@ export class KrakenExchange extends BaseExchange {
   /**
    * Sync the orders of a user with his exchange account
    *
-   * See API endpoint details here: https://docs.kraken.com/rest/#tag/Account-Data/operation/getClosedOrders
+   *
    */
-  // You were here, using previously the lastOrder param.
   syncOrders(startDateObj: Date, endDateObj: Date) {
     // Default kraken API page size
     const pageSize = 50;

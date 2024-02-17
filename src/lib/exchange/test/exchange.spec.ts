@@ -2,10 +2,10 @@ import { faker } from '@faker-js/faker';
 import { ForbiddenException } from '@nestjs/common';
 import { ExchangeNameEnum } from '@prisma/client';
 import { bitstamp, kraken } from 'ccxt';
-import { BitstampExchange } from 'src/common/exchange/bitstamp-exchange';
-import { GetExchangeDto } from 'src/common/exchange/dto';
-import { ExchangeFactory } from 'src/common/exchange/exchange.factory';
-import { KrakenExchange } from 'src/common/exchange/kraken-exchange';
+import { BitstampExchange } from 'src/lib/exchange/bitstamp-exchange';
+import { GetExchangeDto } from 'src/lib/exchange/dto';
+import { ExchangeFactory } from 'src/lib/exchange/exchange.factory';
+import { KrakenExchange } from 'src/lib/exchange/kraken-exchange';
 
 describe('Exchanges', () => {
   describe('ExchangeFactory', () => {

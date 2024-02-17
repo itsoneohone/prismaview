@@ -6,8 +6,8 @@ import {
 import { AccessKey, ExchangeNameEnum } from '@prisma/client';
 import { CreateAccessKeyDto } from 'src/access-key/dto';
 import { PaginateDto, PaginateResultDto } from 'src/common/dto';
-import { GetExchangeDto } from 'src/common/exchange/dto';
-import { ExchangeFactory } from 'src/common/exchange/exchange.factory';
+import { GetExchangeDto } from 'src/lib/exchange/dto';
+import { ExchangeFactory } from 'src/lib/exchange/exchange.factory';
 import {
   preparePaginateResultDto,
   SEARCH_LIMIT,
