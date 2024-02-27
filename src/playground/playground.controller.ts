@@ -1,9 +1,14 @@
-import { Controller, Get } from '@nestjs/common';
+import { Body, Controller, Get } from '@nestjs/common';
 import { PlaygroundService } from 'src/playground/playground.service';
 
 @Controller('playground')
 export class PlaygroundController {
   constructor(private playgroundService: PlaygroundService) {}
+
+  @Get('/ccxt-info')
+  ccxtInfo() {
+    return this.playgroundService.ccxtInfo();
+  }
 
   @Get('/access-limited')
   isAccessLimitedToReporting() {
@@ -11,15 +16,28 @@ export class PlaygroundController {
   }
 
   @Get('/supports')
-  exchangeSupports() {
-    return this.playgroundService.exchangeSupports();
+  exchangeSupports(@Body('lookFor') lookFor?: string) {
+    return this.playgroundService.exchangeSupports(lookFor);
   }
 
-  @Get('ccxt')
-  ccxt() {
-    // return this.orderService.fetchΒitstampOrders();
+  @Get('/late-kraken-orders')
+  lateKrakenOrders() {
     return this.playgroundService.fetchKrakenOrders();
-    // return this.orderService.paginate2();
+  }
+
+  @Get('/late-bitstamp-orders')
+  lateBitstampOrders() {
+    return this.playgroundService.fetchΒitstampOrders();
+  }
+
+  @Get('load-markets')
+  loadMarkets() {
+    return this.playgroundService.loadMarkets();
+  }
+
+  @Get('fetch-ohlcv')
+  fetchOhlcv() {
+    return this.playgroundService.fetchOhlcv();
   }
 
   // @Get('playground')

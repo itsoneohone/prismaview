@@ -66,9 +66,10 @@ export class PlaygroundService {
     return `https://swapi.dev/api/people?format=json&page=${page}`;
   }
 
-  playground(accessKey: AccessKey) {
-    const cryptoExchange: CryptoExchange = getCryptoExchange(accessKey);
-    // cryptoExchange.exchange.fetchOHLCV()
+  async ccxtInfo() {
+    return {
+      version: ccxtVersion,
+    };
   }
 
   async paginate() {
@@ -168,29 +169,38 @@ export class PlaygroundService {
     return this.krakenExchange.validateCredentialLimitations();
   }
 
-  async exchangeSupports() {
-    const lookFor = 'order';
+  async exchangeSupports(lookFor?: string) {
+    const cryptoExchange = this.krakenExchange;
+    const exchange = cryptoExchange.exchange;
+    const has = Object.keys(exchange.has).reduce((_supports, key) => {
+      if (exchange.has[key]) {
+        if (
+          (lookFor && key.toLowerCase().includes(lookFor.toLowerCase())) ||
+          !lookFor
+        ) {
+          _supports[key] = exchange.has[key];
+        }
+      }
+      return _supports;
+    }, {});
 
-    // const exchange = this.bitstampExchange;
-    // console.log({
-    //   requiredCredentials: exchange.requiredCredentials,
-    //   enableRateLimit: exchange.enableRateLimit,
-    //   api: exchange.api.private,
-    // });
+    return {
+      timeout: exchange.timeout,
+      exchangeName: cryptoExchange.name,
+      has,
+    };
+  }
 
-    // return Object.keys(exchange.has).reduce((_supports, key) => {
-    //   if (exchange.has[key]) {
-    //     if ((lookFor && key.toLowerCase().includes(lookFor)) || !lookFor) {
-    //       _supports[key] = exchange.has[key];
-    //     }
-    //   }
-    //   return _supports;
-    // }, {});
+  async loadMarkets() {
+    const cryptoExchange: CryptoExchange = this.krakenExchange;
+    const exchange = cryptoExchange.exchange;
+
+    return exchange.loadMarkets();
   }
 
   async fetchKrakenOrders() {
-    const start = new Date(2021, 1, 1).getTime();
-    const end = new Date(2021, 2, 1).getTime();
+    const start = new Date(2023, 12, 1).getTime();
+    const end = new Date(2024, 2, 1).getTime();
     const since = undefined;
     console.log({
       startDate: new Date(start).toISOString(),
@@ -202,58 +212,21 @@ export class PlaygroundService {
     const symbol = undefined;
     const limit = undefined;
 
-    // const orders = await this.bitstampExchange.privatePostUserTransactions({
-    //   limit,
-    //   offset,
-    //   sort: 'asc',
-    // });
-    // const trades = await this.krakenExchange.exchange.fetchMyTrades(symbol, since, limit, {
-    //   start: start / 1000,
-    //   end: end / 1000,
-    // });
-    // const trades = await this.krakenExchange.exchange.privatePostTradesHistory({
-    //   start: start / 1000,
-    //   end: end / 1000,
-    // });
-    // return { trades };
     // https://docs.kraken.com/rest/#tag/Account-Data/operation/getClosedOrders
     const orders = await this.krakenExchange.exchange.fetchClosedOrders(
       symbol,
       since,
       limit,
       {
-        // start: start / 1000,
-        // end: end / 1000,
+        start: start / 1000,
+        end: end / 1000,
         trades: true,
         // ofs: 49,
-        start: 'OI74LJ-5WDB3-ZFC7XT',
+        // start: 'OI74LJ-5WDB3-ZFC7XT',
       },
     );
 
-    // const orders = await this.krakenExchange.exchange.privatePostClosedOrders({
-    //   start: start / 1000,
-    //   end: end / 1000,
-    //   trades: true,
-    // });
-
     return { orders };
-    // const allOrders = orders.reduce((_orders, order) => {
-    //   if (!_orders[order.status]) {
-    //     _orders[order.status] = [];
-    //   }
-    //   _orders[order.status].push(order);
-
-    //   return _orders;
-    // }, {});
-
-    // return {
-    //   totalCount: this.krakenExchange.exchange.last_json_response.result.count,
-    //   count: orders.length,
-    //   closedOrdersCount: allOrders['closed']?.length,
-    //   closedOrders: allOrders['closed'],
-    //   canceledOrdersCount: allOrders['canceled']?.length,
-    //   cancelledOrders: allOrders['canceled'],
-    // };
   }
 
   async fetchΒitstampOrders() {
@@ -302,5 +275,15 @@ export class PlaygroundService {
     //   canceledOrdersCount: allOrders['canceled']?.length,
     //   cancelledOrders: allOrders['canceled'],
     // };
+  }
+
+  async fetchOhlcv() {
+    const cryptoExchange: CryptoExchange = this.krakenExchange;
+    const exchange = cryptoExchange.exchange;
+    const since = new Date('2024-01-02T07:49:00Z').getTime() / 1000;
+    return {
+      ohlcv: await exchange.fetchOHLCV('BTC/USD', '1m', since, 1),
+      api: exchange.api,
+    };
   }
 }
