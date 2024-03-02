@@ -16,17 +16,30 @@ export class PlaygroundController {
   }
 
   @Get('/supports')
-  exchangeSupports(@Body('lookFor') lookFor?: string) {
-    return this.playgroundService.exchangeSupports(lookFor);
+  exchangeSupports(
+    @Body('cryptoExchangeName') cryptoExchangeName?: string,
+    @Body('lookFor') lookFor?: string,
+  ) {
+    return this.playgroundService.exchangeSupports(cryptoExchangeName, lookFor);
   }
 
-  @Get('/late-kraken-orders')
-  lateKrakenOrders() {
+  @Get('/my-kraken-ledger')
+  myKrakenLedger() {
+    return this.playgroundService.fetchKrakenLedger();
+  }
+
+  @Get('/my-kraken-orders')
+  myKrakenOrders() {
     return this.playgroundService.fetchKrakenOrders();
   }
 
-  @Get('/late-bitstamp-orders')
-  lateBitstampOrders() {
+  @Get('/my-kraken-order')
+  myKrakenOrder(@Body('orderId') orderId: string) {
+    return this.playgroundService.fetchKrakenOrder(orderId);
+  }
+
+  @Get('/my-bitstamp-orders')
+  myBitstampOrders() {
     return this.playgroundService.fetchΒitstampOrders();
   }
 

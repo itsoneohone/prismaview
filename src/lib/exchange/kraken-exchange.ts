@@ -15,7 +15,10 @@ export class KrakenExchange extends BaseExchange {
       secret: this.apiSecret,
     });
     // Respect the exchange's rate limits (https://docs.kraken.com/rest/#section/Rate-Limits)
-    this.requestDelay = 2000;
+    this.requestDelay = this.exchange.rateLimit;
+
+    // Enable debug mode to see the HTTP requests and responses in details
+    // this.exchange.verbose = true;
   }
 
   /**

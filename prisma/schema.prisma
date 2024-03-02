@@ -9,12 +9,12 @@ datasource db {
 
 model User {
   id             Int         @id @default(autoincrement())
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-  email          String      @unique
-  hash           String
-  firstName      String?
-  lastName       String?
+  createdAt      DateTime    @default(now()) @db.Timestamptz()
+  updatedAt      DateTime    @updatedAt @db.Timestamptz()
+  email          String      @unique @db.VarChar(256)
+  hash           String      @db.VarChar(512)
+  firstName      String?     @db.VarChar(256)
+  lastName       String?     @db.VarChar(256)
   currentBalance Decimal     @default(2000) @db.Decimal(10, 2)
   initialBalance Decimal     @default(2000) @db.Decimal(10, 2)
   role           RoleEnum    @default(USER)
@@ -27,11 +27,11 @@ model User {
 
 model Expense {
   id          Int      @id @default(autoincrement())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now()) @db.Timestamptz()
+  updatedAt   DateTime @updatedAt @db.Timestamptz()
   title       String
   description String?
-  date        DateTime
+  date        DateTime @db.Timestamptz()
   userId      Int
   amount      Decimal  @db.Decimal(10, 2)
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -51,8 +51,8 @@ model AccessKey {
   secret    String           @db.VarChar(256)
   exchange  ExchangeNameEnum @default(KRAKEN)
   isDeleted Boolean          @default(false)
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
+  createdAt DateTime         @default(now()) @db.Timestamptz()
+  updatedAt DateTime         @updatedAt @db.Timestamptz()
 
   userId Int
   user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -68,11 +68,11 @@ enum ExchangeNameEnum {
 
 model Order {
   id        Int                @id @default(autoincrement())
-  orderId   String?            @unique()
+  orderId   String?            @unique() @db.VarChar(256)
   timestamp BigInt
-  datetime  DateTime
+  datetime  DateTime           @db.Timestamptz()
   status    OrderStatusEnum    @default(CLOSED)
-  symbol    String
+  symbol    String             @db.VarChar(16)
   type      OrderTypeEnum      @default(MARKET)
   side      OrderSideEnum      @default(BUY)
   price     Decimal            @db.Decimal(20, 8)
@@ -84,8 +84,8 @@ model Order {
   currency  OrderCurrencyEnum  @default(USD)
   createdBy OrderCreatedByEnum @default(USER)
   rawData   Json?
-  createdAt DateTime           @default(now())
-  updatedAt DateTime           @updatedAt
+  createdAt DateTime           @default(now()) @db.Timestamptz()
+  updatedAt DateTime           @updatedAt @db.Timestamptz()
 
   userId Int
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)

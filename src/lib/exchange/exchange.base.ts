@@ -43,7 +43,10 @@ export class BaseExchange {
 
     return Object.keys(exchange.has).reduce((_supports, key) => {
       if (exchange.has[key]) {
-        if (lookFor && key.toLowerCase().includes(lookFor)) {
+        if (
+          (lookFor && key.toLowerCase().includes(lookFor.toLowerCase())) ||
+          !lookFor
+        ) {
           _supports[key] = exchange.has[key];
         }
       }

@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import {
   version as ccxtVersion,
   exchanges as ccxtExchanges,
@@ -169,25 +169,25 @@ export class PlaygroundService {
     return this.krakenExchange.validateCredentialLimitations();
   }
 
-  async exchangeSupports(lookFor?: string) {
-    const cryptoExchange = this.krakenExchange;
+  async exchangeSupports(cryptoExchangeName: string, lookFor?: string) {
+    if (!cryptoExchangeName) {
+      throw new BadRequestException({
+        field: 'cryptoExchangeName',
+        error: `cryptoExchangeName has to be one of (${Object.keys(ExchangeNameEnum).join(', ')})`,
+      });
+    }
+
+    const cryptoExchange =
+      cryptoExchangeName === ExchangeNameEnum.KRAKEN
+        ? this.krakenExchange
+        : this.bitstampExchange;
     const exchange = cryptoExchange.exchange;
-    const has = Object.keys(exchange.has).reduce((_supports, key) => {
-      if (exchange.has[key]) {
-        if (
-          (lookFor && key.toLowerCase().includes(lookFor.toLowerCase())) ||
-          !lookFor
-        ) {
-          _supports[key] = exchange.has[key];
-        }
-      }
-      return _supports;
-    }, {});
 
     return {
       timeout: exchange.timeout,
+      rateLimit: exchange.rateLimit,
       exchangeName: cryptoExchange.name,
-      has,
+      has: cryptoExchange.supports(lookFor),
     };
   }
 
@@ -196,6 +196,19 @@ export class PlaygroundService {
     const exchange = cryptoExchange.exchange;
 
     return exchange.loadMarkets();
+  }
+
+  async fetchKrakenLedger() {
+    // const start = new Date(2023, 12, 1).getTime();
+    // https://docs.ccxt.com/#/README?id=ledger
+    const cryptoExchange: CryptoExchange = this.krakenExchange;
+    const exchange = cryptoExchange.exchange;
+    const code = undefined;
+    const since = undefined;
+    const limit = undefined;
+    const ledger = await exchange.fetchLedger(code, since, limit);
+
+    return { ledger };
   }
 
   async fetchKrakenOrders() {
@@ -227,6 +240,16 @@ export class PlaygroundService {
     );
 
     return { orders };
+  }
+
+  async fetchKrakenOrder(orderId: string) {
+    // const start = new Date(2023, 12, 1).getTime();
+    // https://docs.ccxt.com/#/README?id=querying-orders
+    const cryptoExchange: CryptoExchange = this.krakenExchange;
+    const exchange = cryptoExchange.exchange;
+    const order = await exchange.fetchOrder(orderId);
+
+    return { order };
   }
 
   async fetchΒitstampOrders() {
@@ -280,7 +303,7 @@ export class PlaygroundService {
   async fetchOhlcv() {
     const cryptoExchange: CryptoExchange = this.krakenExchange;
     const exchange = cryptoExchange.exchange;
-    const since = new Date('2024-01-02T07:49:00Z').getTime() / 1000;
+    const since = new Date('2024-02-28 18:02:47.124+00').getTime() / 1000;
     return {
       ohlcv: await exchange.fetchOHLCV('BTC/USD', '1m', since, 1),
       api: exchange.api,
