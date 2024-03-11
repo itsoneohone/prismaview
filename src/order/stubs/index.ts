@@ -1,7 +1,6 @@
 import { faker } from '@faker-js/faker';
 import {
   OrderCreatedByEnum,
-  OrderCurrencyEnum,
   OrderSideEnum,
   OrderStatusEnum,
   OrderTypeEnum,
@@ -9,6 +8,10 @@ import {
 import { CreateOrderDto, UpdateOrderDto } from 'src/order/dto';
 import { DECIMAL_ROUNDING, getRandomAmount } from 'src/common/amounts';
 import { userStubStatic } from 'src/user/stubs';
+import {
+  getSymbolCurrencies,
+  calculateOrderAmounts,
+} from 'src/order/common/utils';
 
 export const CreateOrderDtoStub = (): CreateOrderDto => {
   const date = new Date();
@@ -19,22 +22,27 @@ export const CreateOrderDtoStub = (): CreateOrderDto => {
   const cost = price.mul(filled).toDecimalPlaces(DECIMAL_ROUNDING);
   const fee = getRandomAmount(1);
 
+  const symbol = 'BTC/USD';
+
   return {
     orderId: faker.string.uuid(),
     timestamp: BigInt(date.getTime()),
     datetime: date,
     status: OrderStatusEnum.CLOSED,
-    symbol: 'BTC/EUR',
+    symbol,
     type: OrderTypeEnum.MARKET,
     side: OrderSideEnum.BUY,
     price,
     filled,
     cost,
     fee,
-    currency: OrderCurrencyEnum.EUR,
     accessKeyId: null,
     userId: null,
     rawData: null,
+    // The following 3 fields should be calculated based on the symbol, when an order is created
+    base: null,
+    quote: null,
+    currency: null,
   };
 };
 export const createOrderDtoStubStatic = CreateOrderDtoStub();
@@ -45,9 +53,18 @@ export const OrderStub = (
   userId: number,
   dto: CreateOrderDto | UpdateOrderDto,
 ) => {
+  const { filled, price, cost } = calculateOrderAmounts(dto.filled, dto.price);
+  const { base, quote, currency } = getSymbolCurrencies(dto.symbol);
   return {
     ...dto,
     userId,
+    base,
+    quote,
+    currency,
+    filled,
+    price,
+    cost,
+    timestamp: BigInt(dto.datetime.getTime()),
     createdBy: OrderCreatedByEnum.USER,
     createdAt: date,
     updatedAt: date,
@@ -63,13 +80,9 @@ export const updateOrderDtoStubStatic: UpdateOrderDto = {
   price: getRandomAmount(100),
   datetime: new Date(date.setMonth(date.getMonth() - 1)),
 };
-
-export const updateOrderStubStatic = OrderStub(_user.id, {
-  ...updateOrderDtoStubStatic,
-  cost: updateOrderDtoStubStatic.filled
-    .mul(updateOrderDtoStubStatic.price)
-    .toDecimalPlaces(DECIMAL_ROUNDING),
-  timestamp: BigInt(updateOrderDtoStubStatic.datetime.getTime()),
-});
+export const updateOrderStubStatic = OrderStub(
+  _user.id,
+  updateOrderDtoStubStatic,
+);
 
 export const orderStubs = [orderStubStatic, orderStubStatic2];

@@ -73,6 +73,8 @@ model Order {
   datetime  DateTime           @db.Timestamptz()
   status    OrderStatusEnum    @default(CLOSED)
   symbol    String             @db.VarChar(16)
+  base      String             @db.VarChar(8)
+  quote     String             @db.VarChar(8)
   type      OrderTypeEnum      @default(MARKET)
   side      OrderSideEnum      @default(BUY)
   price     Decimal            @db.Decimal(20, 8)
@@ -81,7 +83,7 @@ model Order {
   // filled * price
   cost      Decimal            @db.Decimal(20, 8)
   fee       Decimal            @db.Decimal(16, 8)
-  currency  OrderCurrencyEnum  @default(USD)
+  currency  String             @db.VarChar(8)
   createdBy OrderCreatedByEnum @default(USER)
   rawData   Json?
   createdAt DateTime           @default(now()) @db.Timestamptz()
@@ -101,12 +103,6 @@ model Order {
 enum OrderCreatedByEnum {
   USER
   SCRIPT
-}
-
-enum OrderCurrencyEnum {
-  EUR
-  GBP
-  USD
 }
 
 enum OrderStatusEnum {

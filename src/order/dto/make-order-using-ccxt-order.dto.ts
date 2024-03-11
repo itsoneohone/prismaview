@@ -1,10 +1,6 @@
-import {
-  OrderCurrencyEnum,
-  OrderSideEnum,
-  OrderStatusEnum,
-  OrderTypeEnum,
-} from '@prisma/client';
-import { CreateOrderDto } from 'src/order/dto/create-order.dto';
+import { OrderSideEnum, OrderStatusEnum, OrderTypeEnum } from '@prisma/client';
+import { getSymbolCurrencies } from 'src/order/common/utils';
+import { CreateOrderDto } from 'src/order/dto';
 
 /**
  * Prepare an Order DTO using a ccxt order object
@@ -14,24 +10,28 @@ import { CreateOrderDto } from 'src/order/dto/create-order.dto';
  * @param ccxtOrder
  * @returns
  */
-export const prepareOrderDto = (
+export const makeOrderDtoUsingCcxtOrder = (
   userId: number,
   accessKeyId: number,
   ccxtOrder,
 ): CreateOrderDto => {
+  const { base, quote, currency } = getSymbolCurrencies(ccxtOrder.symbol);
+
   return {
     orderId: ccxtOrder.id,
     timestamp: ccxtOrder.timestamp,
     datetime: ccxtOrder.datetime,
     status: OrderStatusEnum[ccxtOrder.status.toUpperCase()],
     symbol: ccxtOrder.symbol,
+    base,
+    quote,
+    currency,
     type: OrderTypeEnum[ccxtOrder.type.toUpperCase()],
     side: OrderSideEnum[ccxtOrder.side.toUpperCase()],
     price: ccxtOrder.price,
     filled: ccxtOrder.filled || ccxtOrder.amount,
     cost: ccxtOrder.cost,
     fee: ccxtOrder.fee.cost,
-    currency: OrderCurrencyEnum[ccxtOrder.fee.currency.toUpperCase()],
     accessKeyId: accessKeyId,
     userId,
     rawData: ccxtOrder,

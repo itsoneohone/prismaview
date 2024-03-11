@@ -15,9 +15,13 @@ import {
   preparePaginateResultDto,
 } from 'src/common/search-utils';
 import { DECIMAL_ROUNDING, Decimal } from 'src/common/amounts';
-import { prepareOrderDto } from 'src/order/dto/prepare-order.dto';
+import { makeOrderDtoUsingCcxtOrder } from 'src/order/dto';
 import { SyncMode } from 'src/lib/exchange/exchange.base';
 import { getCryptoExchange } from 'src/lib/exchange/common/utils';
+import {
+  calculateOrderAmounts,
+  getSymbolCurrencies,
+} from 'src/order/common/utils';
 
 @Injectable()
 export class OrderService {
@@ -47,34 +51,60 @@ export class OrderService {
     return order;
   }
 
-  _prepareOrderAmounts(
-    amount: Prisma.Decimal | number | string,
-    price: Prisma.Decimal | number | string,
-  ) {
-    const amountDecimal = new Decimal(amount);
-    const priceDecimal = new Decimal(price);
-
+  /**
+   * Update the CreateOrderDto by setting all amounts and currency values
+   *
+   * @param dto CreateOrderDto
+   * @returns dto
+   */
+  _prepareCreateOrderDto(dto: CreateOrderDto) {
     return {
-      filled: amountDecimal,
-      price: priceDecimal,
-      cost: amountDecimal.mul(priceDecimal).toDecimalPlaces(DECIMAL_ROUNDING),
+      ...dto,
+      // Convert filled and price amounts to decimal and calculate cost
+      ...calculateOrderAmounts(dto.filled, dto.price),
+      // Get the base, quote and currency values
+      ...getSymbolCurrencies(dto.symbol),
+      // Get the unix timestamp based on the input date
+      timestamp: BigInt(new Date(dto.datetime).getTime()),
     };
   }
 
   /**
-   * Check if there is an updated filled amount and price set, and calculate the cost
+   * Check if there is an updated filled amount and price set, and recalculate the cost
    *
    * @param dto UpdateOrderDto
    * @returns dto
    */
-  _updateOrderDto(dto: UpdateOrderDto) {
-    // Convert all amounts to decimal and calculate cost
-    if (dto.filled && dto.price) {
+  _prepareUpdateOrderDto(dto: UpdateOrderDto, order: Order) {
+    // If at least the filled or the price values have changed, recalculate the cost
+    if (dto.filled || dto.price) {
+      let filled = dto.filled;
+      let price = dto.price;
+
+      if (filled && !price) {
+        // New filled value, use the existing order price
+        price = order.price;
+      } else if (price && !filled) {
+        // New price value, use the existing filled value
+        filled = order.filled;
+      }
+
       dto = {
         ...dto,
-        ...this._prepareOrderAmounts(dto.filled, dto.price),
+        ...calculateOrderAmounts(filled, price),
       };
     }
+
+    // Update the base, quote and currency based on the new symbol
+    if (dto.symbol) {
+      dto = {
+        ...dto,
+        // Update base, quote and currency
+        ...getSymbolCurrencies(dto.symbol),
+      };
+    }
+
+    // @todo - convert amounts to user's base currency if needed
     // Get the unix timestamp based on the input date
     if (dto.datetime) {
       dto.timestamp = BigInt(new Date(dto.datetime).getTime());
@@ -93,17 +123,9 @@ export class OrderService {
    * @returns
    */
   createOrder(userId: number, dto: CreateOrderDto): Promise<Order> {
-    // Convert all amounts to decimal and calculate cost
-    dto = {
-      ...dto,
-      ...this._prepareOrderAmounts(dto.filled, dto.price),
-    };
-    // Get the unix timestamp based on the input date
-    dto.timestamp = BigInt(new Date(dto.datetime).getTime());
-
     return this.prisma.order.create({
       data: {
-        ...dto,
+        ...this._prepareCreateOrderDto(dto),
         userId,
       },
     });
@@ -122,8 +144,8 @@ export class OrderService {
     id: number,
     dto: UpdateOrderDto,
   ): Promise<Order> {
-    await this._getOrderById(userId, id);
-    const updatedDto = this._updateOrderDto(dto);
+    const order = await this._getOrderById(userId, id);
+    const updatedDto = this._prepareUpdateOrderDto(dto, order);
 
     return this.prisma.order.update({
       where: {
@@ -356,7 +378,7 @@ export class OrderService {
         // Prepare the order DTOs;
         const dtos: CreateOrderDto[] = Object.values(allOrdersDict).map(
           (curr: any) => {
-            return prepareOrderDto(userId, accessKey.id, curr);
+            return makeOrderDtoUsingCcxtOrder(userId, accessKey.id, curr);
           },
         );
 

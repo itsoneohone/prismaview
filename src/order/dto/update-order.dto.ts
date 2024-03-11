@@ -1,9 +1,4 @@
-import {
-  OrderCurrencyEnum,
-  OrderSideEnum,
-  OrderStatusEnum,
-  OrderTypeEnum,
-} from '@prisma/client';
+import { OrderSideEnum, OrderStatusEnum, OrderTypeEnum } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import {
   IsDateString,
@@ -35,6 +30,19 @@ export class UpdateOrderDto {
   @IsOptional()
   symbol: string;
 
+  @IsString()
+  @IsOptional()
+  base: string;
+
+  @IsString()
+  @IsOptional()
+  quote: string;
+
+  // All amounts are designated in this currency, which is the same as the quote currency.
+  @IsString()
+  @IsOptional()
+  currency: string;
+
   @IsEnum(OrderTypeEnum)
   @IsOptional()
   type: OrderTypeEnum;
@@ -60,8 +68,4 @@ export class UpdateOrderDto {
   @IsDecimal()
   @IsOptional()
   fee: Decimal;
-
-  @IsEnum(OrderCurrencyEnum)
-  @IsOptional()
-  currency: OrderCurrencyEnum;
 }

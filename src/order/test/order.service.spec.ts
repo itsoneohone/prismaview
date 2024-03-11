@@ -1,7 +1,7 @@
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
-import { DECIMAL_ROUNDING, Decimal } from 'src/common/amounts';
+import { DECIMAL_ROUNDING, getRandomAmount } from 'src/common/amounts';
 import { PaginateDto, PaginateResultDto } from 'src/common/dto';
 import {
   SEARCH_LIMIT,
@@ -13,6 +13,7 @@ import {
   createOrderDtoStubStatic,
   orderStubStatic,
   updateOrderDtoStubStatic,
+  updateOrderStubStatic,
 } from 'src/order/stubs';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { userStubStatic } from 'src/user/stubs';
@@ -38,150 +39,238 @@ describe('OrderService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('_prepareOrderAmounts()', () => {
-    let inputFilled;
-    let inputPrice;
-    beforeAll(() => {
-      inputFilled = new Decimal(Math.random() * 100);
-      inputPrice = new Decimal(Math.random() * 100);
-    });
-
-    it('should return all order amounts', () => {
-      const orderAmounts = service._prepareOrderAmounts(
-        inputFilled,
-        inputPrice,
-      );
-      expect(Object.keys(orderAmounts)).toEqual(['filled', 'price', 'cost']);
-    });
-
-    it('should work when the filled amount and price are numbers', () => {
-      const { filled, price, cost } = service._prepareOrderAmounts(
-        inputFilled.toNumber(),
-        inputPrice.toNumber(),
-      );
-      const expectedCost = filled.mul(price).toDecimalPlaces(DECIMAL_ROUNDING);
-
-      expect(filled.toNumber()).toEqual(inputFilled.toNumber());
-      expect(price.toNumber()).toEqual(inputPrice.toNumber());
-      expect(cost.toNumber()).toEqual(expectedCost.toNumber());
-    });
-
-    it('should work when the filled amount and price are strings', () => {
-      const { filled, price, cost } = service._prepareOrderAmounts(
-        inputFilled.toString(),
-        inputPrice.toString(),
-      );
-      const expectedCost = filled.mul(price).toDecimalPlaces(DECIMAL_ROUNDING);
-
-      expect(filled.toNumber()).toEqual(inputFilled.toNumber());
-      expect(price.toNumber()).toEqual(inputPrice.toNumber());
-      expect(cost.toNumber()).toEqual(expectedCost.toNumber());
-    });
-
-    it('should work when the filled amount and price are Decimals', () => {
-      const { filled, price, cost } = service._prepareOrderAmounts(
-        inputFilled,
-        inputPrice,
-      );
-      const expectedCost = filled.mul(price).toDecimalPlaces(DECIMAL_ROUNDING);
-
-      expect(filled.toNumber()).toEqual(inputFilled.toNumber());
-      expect(price.toNumber()).toEqual(inputPrice.toNumber());
-      expect(cost.toNumber()).toEqual(expectedCost.toNumber());
-    });
-  });
-
-  describe('createOrder()', () => {
+  describe('Create new order', () => {
     // Use the static stubs used for auto mocking the prisma service
-    const createOrderDto: CreateOrderDto = createOrderDtoStubStatic;
+    const createOrderDtoStub: CreateOrderDto = createOrderDtoStubStatic;
     const orderStub = orderStubStatic;
-    let order;
 
-    beforeAll(async () => {
-      order = await service.createOrder(user.id, createOrderDto);
-    });
+    describe('_prepareCreateOrderDto', () => {
+      it('should set the amount and currency fields', () => {
+        const createOrderDto =
+          service._prepareCreateOrderDto(createOrderDtoStub);
 
-    it('should call prisma.order.create()', () => {
-      expect(prisma.order.create).toHaveBeenCalled();
-      expect(prisma.order.create).toHaveBeenCalledWith({
-        data: {
-          ...createOrderDto,
-          userId: user.id,
-        },
+        expect(createOrderDto.filled).toEqual(orderStub.filled);
+        expect(createOrderDto.price).toEqual(orderStub.price);
+        expect(createOrderDto.cost).toEqual(orderStub.cost);
+        expect(createOrderDto.symbol).toEqual(orderStub.symbol);
+        expect(createOrderDto.base).toEqual(orderStub.base);
+        expect(createOrderDto.quote).toEqual(orderStub.quote);
+        expect(createOrderDto.datetime).toEqual(orderStub.datetime);
+        expect(createOrderDto.timestamp).toEqual(orderStub.timestamp);
       });
-      expect(prisma.order.create).toHaveReturnedWith(orderStub);
     });
 
-    it('should create an order', () => {
-      expect(order).toMatchObject(orderStub);
+    describe('createOrder()', () => {
+      let order;
+
+      beforeAll(async () => {
+        order = await service.createOrder(user.id, createOrderDtoStub);
+      });
+
+      it('should call prisma.order.create()', () => {
+        // Set the amount and currency related fields
+        const createOrderDto =
+          service._prepareCreateOrderDto(createOrderDtoStub);
+
+        expect(prisma.order.create).toHaveBeenCalled();
+        expect(prisma.order.create).toHaveBeenCalledWith({
+          data: {
+            ...createOrderDto,
+            userId: user.id,
+          },
+        });
+        expect(prisma.order.create).toHaveReturnedWith(orderStub);
+      });
+
+      it('should create an order', () => {
+        expect(order).toMatchObject(orderStub);
+      });
     });
   });
 
-  describe('_updateOrderDto()', () => {
-    // Use the static stubs used for auto mocking the prisma service
-    const updateOrderDto = updateOrderDtoStubStatic;
-    let updatedOrderData;
+  describe('Update an existing order', () => {
+    describe('_updateOrderDto()', () => {
+      let updateOrderDto;
+      let updateOrder;
+      let updatedOrderData;
+      let initialFilled;
+      let initialPrice;
+      let initialCost;
+      let initialDatetime;
+      let initialTimestamp;
 
-    it('update the dto amount fields when the filled, price and datetime fields change', async () => {
-      updatedOrderData = await service._updateOrderDto(updateOrderDto);
-
-      expect(updatedOrderData.price).toEqual(updateOrderDto.price);
-      expect(updatedOrderData.filled).toEqual(updateOrderDto.filled);
-      expect(updatedOrderData.cost).toEqual(
-        updateOrderDto.price
-          .mul(updateOrderDto.filled)
-          .toDecimalPlaces(DECIMAL_ROUNDING),
-      );
-      // The timestamp is stored as BigInt
-      expect(updatedOrderData.timestamp.toString()).toEqual(
-        updateOrderDto.datetime.getTime().toString(),
-      );
-    });
-
-    it('not update the dto amount fields when no new filled and price values are provided', async () => {
-      delete updatedOrderData.filled;
-      delete updatedOrderData.price;
-      delete updatedOrderData.cost;
-      updatedOrderData = await service._updateOrderDto(updateOrderDto);
-
-      expect(updatedOrderData.price).toBeUndefined;
-      expect(updatedOrderData.filled).toBeUndefined;
-      expect(updatedOrderData.cost).toBeUndefined;
-    });
-
-    it('not update the timestamp fields whe no new datetime value is provided', async () => {
-      delete updatedOrderData.datetime;
-      updatedOrderData = await service._updateOrderDto(updateOrderDto);
-
-      expect(updatedOrderData.datetime).toBeUndefined;
-      expect(updatedOrderData.timestamp).toBeUndefined;
-    });
-  });
-
-  describe('updateOrderById()', () => {
-    // Use the static stubs used for auto mocking the prisma service
-    const createOrderDto: CreateOrderDto = createOrderDtoStubStatic;
-    const orderStub = orderStubStatic;
-    let order;
-
-    beforeAll(async () => {
-      order = await service.createOrder(user.id, createOrderDto);
-    });
-
-    it('should call prisma.order.create()', () => {
-      expect(prisma.order.create).toHaveBeenCalled();
-      expect(prisma.order.create).toHaveBeenCalledWith({
-        data: {
-          ...createOrderDto,
-          userId: user.id,
-        },
+      beforeAll(() => {
+        // Use the static stubs used for auto mocking the prisma service
+        updateOrderDto = updateOrderDtoStubStatic;
+        updateOrder = updateOrderStubStatic;
+        initialFilled = updateOrderDto.filled;
+        initialPrice = updateOrderDto.price;
+        initialCost = updateOrderDto.cost;
+        initialDatetime = updateOrderDto.datetime;
+        initialTimestamp = updateOrderDto.timestamp;
       });
-      expect(prisma.order.create).toHaveReturnedWith(orderStub);
+
+      afterEach(() => {
+        // Restore the initial amount values
+        updateOrderDto.price = initialPrice;
+        updateOrderDto.filled = initialFilled;
+      });
+
+      it('update the dto amount fields when the filled and price fields change', async () => {
+        updateOrderDto.filled = getRandomAmount(100);
+        updateOrderDto.price = getRandomAmount(100);
+        updatedOrderData = await service._prepareUpdateOrderDto(
+          updateOrderDto,
+          updateOrder,
+        );
+
+        expect(updatedOrderData.price).not.toEqual(initialPrice);
+        expect(updatedOrderData.filled).not.toEqual(initialFilled);
+        expect(updatedOrderData.cost).not.toEqual(initialCost);
+        expect(updatedOrderData.price).toEqual(updateOrderDto.price);
+        expect(updatedOrderData.filled).toEqual(updateOrderDto.filled);
+        expect(updatedOrderData.cost).toEqual(
+          updateOrderDto.price
+            .mul(updateOrderDto.filled)
+            .toDecimalPlaces(DECIMAL_ROUNDING),
+        );
+      });
+
+      it('update the dto amount fields when only the filled value changes', async () => {
+        delete updateOrderDto.filled;
+        updateOrderDto.price = getRandomAmount(100);
+        updatedOrderData = await service._prepareUpdateOrderDto(
+          updateOrderDto,
+          updateOrder,
+        );
+
+        expect(updatedOrderData.price).not.toEqual(initialPrice);
+        expect(updatedOrderData.cost).not.toEqual(initialCost);
+        // The filled field was not updated
+        expect(updatedOrderData.filled).toEqual(initialFilled);
+        expect(updatedOrderData.filled).toEqual(updateOrder.filled);
+        expect(updatedOrderData.price).toEqual(updateOrderDto.price);
+        expect(updatedOrderData.cost).toEqual(
+          updateOrderDto.price
+            .mul(updateOrder.filled)
+            .toDecimalPlaces(DECIMAL_ROUNDING),
+        );
+      });
+
+      it('update the dto amount fields when only the price value changes', async () => {
+        delete updateOrderDto.price;
+        updateOrderDto.filled = getRandomAmount(100);
+        updatedOrderData = await service._prepareUpdateOrderDto(
+          updateOrderDto,
+          updateOrder,
+        );
+
+        expect(updatedOrderData.filled).not.toEqual(initialFilled);
+        expect(updatedOrderData.cost).not.toEqual(initialCost);
+        // The price value was not updated
+        expect(updatedOrderData.price).toEqual(initialPrice);
+        expect(updatedOrderData.price).toEqual(updateOrder.price);
+        expect(updatedOrderData.filled).toEqual(updateOrderDto.filled);
+        expect(updatedOrderData.cost).toEqual(
+          updateOrder.price
+            .mul(updateOrderDto.filled)
+            .toDecimalPlaces(DECIMAL_ROUNDING),
+        );
+      });
+
+      it('update the dto currency fields when the symbol field changes', async () => {
+        const initialSymbol = updateOrderDto.symbol;
+        const newBase = 'ETH';
+        const newQuote = 'EUR';
+        const newSymbol = [newBase, newQuote].join('/');
+
+        updateOrderDto.symbol = newSymbol;
+        updatedOrderData = await service._prepareUpdateOrderDto(
+          updateOrderDto,
+          updateOrder,
+        );
+
+        expect(updatedOrderData.symbol).not.toEqual(initialSymbol);
+        expect(updatedOrderData.symbol).toEqual(newSymbol);
+        expect(updatedOrderData.base).toEqual(newBase);
+        expect(updatedOrderData.quote).toEqual(newQuote);
+        expect(updatedOrderData.currency).toEqual(newQuote);
+      });
+
+      it('update the timestamp when the datetime field change', async () => {
+        const initialDatetime = updateOrderDto.datetime;
+        const initialTimestamp = updateOrderDto.timestamp;
+        const newDatetime = new Date();
+
+        updateOrderDto.datetime = newDatetime;
+        updatedOrderData = await service._prepareUpdateOrderDto(
+          updateOrderDto,
+          updateOrder,
+        );
+
+        expect(updatedOrderData.datetime).not.toEqual(initialDatetime);
+        expect(updatedOrderData.timestamp).not.toEqual(initialTimestamp);
+        expect(updatedOrderData.datetime.toISOString()).toEqual(
+          newDatetime.toISOString(),
+        );
+        // The timestamp is stored as BigInt
+        expect(updatedOrderData.timestamp.toString()).toEqual(
+          newDatetime.getTime().toString(),
+        );
+      });
+
+      it('do not update the dto amount fields when no new filled and price values are provided', async () => {
+        delete updateOrderDto.filled;
+        delete updateOrderDto.price;
+        updatedOrderData = await service._prepareUpdateOrderDto(
+          updateOrderDto,
+          updateOrder,
+        );
+
+        expect(updatedOrderData.price).toBeUndefined;
+        expect(updatedOrderData.filled).toBeUndefined;
+        expect(updatedOrderData.cost).toBeUndefined;
+      });
+
+      it('do not update the timestamp fields when no new datetime value is provided', async () => {
+        delete updateOrderDto.datetime;
+        updatedOrderData = await service._prepareUpdateOrderDto(
+          updateOrderDto,
+          updateOrder,
+        );
+
+        expect(updatedOrderData.datetime).toBeUndefined;
+        expect(updatedOrderData.timestamp).toBeUndefined;
+      });
     });
 
-    it('should create an order', () => {
-      expect(order).toMatchObject(orderStub);
-    });
+    // @TODO Add the tests
+
+    // describe('updateOrderById()', () => {
+    //   // Use the static stubs used for auto mocking the prisma service
+    //   const createOrderDto: CreateOrderDto = createOrderDtoStubStatic;
+    //   const orderStub = orderStubStatic;
+    //   let order;
+
+    //   beforeAll(async () => {
+    //     order = await service.createOrder(user.id, createOrderDto);
+    //   });
+
+    //   it('should call prisma.order.create()', () => {
+    //     expect(prisma.order.create).toHaveBeenCalled();
+    //     expect(prisma.order.create).toHaveBeenCalledWith({
+    //       data: {
+    //         ...createOrderDto,
+    //         userId: user.id,
+    //       },
+    //     });
+    //     expect(prisma.order.create).toHaveReturnedWith(orderStub);
+    //   });
+
+    //   it('should create an order', () => {
+    //     expect(order).toMatchObject(orderStub);
+    //   });
+    // });
   });
 
   describe('getOrders()', () => {
