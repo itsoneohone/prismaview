@@ -1,9 +1,34 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CreateUserDto } from 'src/user/dto';
+import { FiatCurrency, UserSettingName } from 'src/user/common/constants';
 
 @Injectable()
 export class UserService {
   constructor(private prisma: PrismaService) {}
+
+  /**
+   * Create a new user with their default settings
+   *
+   * @param userDto
+   * @returns
+   */
+  async createUser(userDto: CreateUserDto) {
+    return this.prisma.user.create({
+      data: {
+        ...userDto,
+        userSettings: {
+          create: [
+            // USD is the default base currency
+            {
+              name: UserSettingName.BASE_CURRENCY,
+              value: FiatCurrency.USD,
+            },
+          ],
+        },
+      },
+    });
+  }
 
   getMe(userId: number) {
     return this.prisma.user.findUnique({

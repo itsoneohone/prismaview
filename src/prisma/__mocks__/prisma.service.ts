@@ -4,6 +4,7 @@ import { orderStubStatic, orderStubs } from 'src/order/stubs';
 
 export const PrismaService = jest.fn().mockReturnValue({
   user: {
+    create: jest.fn().mockImplementation(() => userStubStatic),
     findUnique: jest.fn().mockImplementation(() => userStubStatic),
     findMany: jest.fn().mockImplementation(() => usersWithExpensesStubStatic),
     update: jest.fn().mockImplementation(() => Promise.resolve(undefined)),

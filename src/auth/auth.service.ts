@@ -5,15 +5,26 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { UserService } from 'src/user/user.service';
+import { CreateUserDto } from 'src/user/dto';
 
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwt: JwtService,
+    private userService: UserService,
     private config: ConfigService,
   ) {}
 
+  /**
+   * Sign up a user
+   *
+   * Currently not in used as we don't use sessions but rely on jwt tokens.
+   *
+   * @param dto
+   * @returns
+   */
   async signup(dto: AuthDto) {
     // Check if the user exists
     const userExists = await this.prisma.user.count({
@@ -40,6 +51,14 @@ export class AuthService {
     return { id: user.id, email: user.email, role: user.role };
   }
 
+  /**
+   * Sign in a user
+   *
+   * Currently not in used as we don't use sessions but rely on jwt tokens.
+   *
+   * @param dto
+   * @returns
+   */
   async signin(dto: AuthDto) {
     // Get user by email
     const user = await this.prisma.user.findUnique({
@@ -63,7 +82,17 @@ export class AuthService {
     return { id: user.id, email: user.email, role: user.role };
   }
 
-  async signJwtToken(userId: number, email: string, role: string) {
+  /**
+   * Sign a jwt token for a user.
+   *
+   * The token expires in 60minutes.
+   *
+   * @param userId
+   * @param email
+   * @param role
+   * @returns
+   */
+  private async signJwtToken(userId: number, email: string, role: string) {
     const payload = {
       sub: userId,
       email,
@@ -80,15 +109,21 @@ export class AuthService {
     };
   }
 
+  /**
+   * Create a new user and return a jwt access token
+   *
+   * @param dto AuthDto
+   * @returns
+   */
   async jwtSignup(dto: AuthDto) {
     try {
       const hash = await argon.hash(dto.password);
-      const user = await this.prisma.user.create({
-        data: {
-          email: dto.email,
-          hash,
-        },
-      });
+
+      const createUserDto: CreateUserDto = {
+        email: dto.email,
+        hash,
+      };
+      const user = await this.userService.createUser(createUserDto);
 
       return this.signJwtToken(user.id, user.email, user.role);
     } catch (error) {
@@ -101,6 +136,12 @@ export class AuthService {
     }
   }
 
+  /**
+   * Sign in the user and return a jwt access token
+   *
+   * @param dto AuthDto
+   * @returns
+   */
   async jwtSignin(dto: AuthDto) {
     // Check if the user exists
     const user = await this.prisma.user.findFirst({
@@ -120,7 +161,7 @@ export class AuthService {
       throw new ForbiddenException('Credentials incorrect');
     }
 
-    // Return teh jwt access token
+    // Return the jwt access token
     return this.signJwtToken(user.id, user.email, user.role);
   }
 }

@@ -21,30 +21,6 @@ import { Response } from 'express';
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  // @Post('signup')
-  // async signup(@Body() dto: AuthDto, @Session() session: UserSession) {
-  //   const { id, email, role } = await this.authService.signup(dto);
-  //   return this.serializeSession(id, email, role, session);
-  // }
-
-  @Post('signup')
-  async signup(@Body() dto: AuthDto) {
-    return this.authService.jwtSignup(dto);
-  }
-
-  // @HttpCode(HttpStatus.OK)
-  // @Post('signin')
-  // async signin(@Body() dto: AuthDto, @Session() session: UserSession) {
-  //   const { id, email, role } = await this.authService.signin(dto);
-  //   return this.serializeSession(id, email, role, session);
-  // }
-
-  @HttpCode(HttpStatus.OK)
-  @Post('signin')
-  async signin(@Body() dto: AuthDto) {
-    return this.authService.jwtSignin(dto);
-  }
-
   private serializeSession(
     id: number,
     email: string,
@@ -58,11 +34,35 @@ export class AuthController {
     };
   }
 
-  @Get('signin')
-  orderList(@Res() res: Response) {
-    return res.render('auth/signin', {
-      // layout: 'layouts/index',
-      message: 'Sign in form',
-    });
+  // @Post('signup')
+  // async signup(@Body() dto: AuthDto, @Session() session: UserSession) {
+  //   const { id, email, role } = await this.authService.signup(dto);
+  //   return this.serializeSession(id, email, role, session);
+  // }
+
+  // @HttpCode(HttpStatus.OK)
+  // @Post('signin')
+  // async signin(@Body() dto: AuthDto, @Session() session: UserSession) {
+  //   const { id, email, role } = await this.authService.signin(dto);
+  //   return this.serializeSession(id, email, role, session);
+  // }
+
+  // @Get('signin')
+  // signinForm(@Res() res: Response) {
+  //   return res.render('auth/signin', {
+  //     // layout: 'layouts/index',
+  //     message: 'Sign in form',
+  //   });
+  // }
+
+  @Post('signup')
+  async signup(@Body() dto: AuthDto) {
+    return this.authService.jwtSignup(dto);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('signin')
+  async signin(@Body() dto: AuthDto) {
+    return this.authService.jwtSignin(dto);
   }
 }

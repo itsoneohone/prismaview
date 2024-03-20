@@ -6,7 +6,7 @@ import { GetExchangeDto } from 'src/lib/exchange/dto';
 import { BaseExchange } from 'src/lib/exchange/exchange.base';
 
 export class KrakenExchange extends BaseExchange {
-  public exchange: kraken;
+  public declare exchange: kraken;
   constructor(exchangeDto: GetExchangeDto) {
     super(exchangeDto);
     this.name = ExchangeNameEnum.KRAKEN;

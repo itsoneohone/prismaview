@@ -1,8 +1,12 @@
 import { Test } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
-import { UserService } from '../user.service';
-import { PrismaService } from '../../prisma/prisma.service';
-import { userStubStatic } from '../stubs';
+import { UserService } from 'src/user/user.service';
+import { PrismaService } from 'src/prisma/prisma.service';
+import {
+  CreateUserSettingsDtoStub,
+  createUserDtoStubStatic,
+  userStubStatic,
+} from 'src/user/stubs';
 
 jest.mock('../../prisma/prisma.service.ts');
 
@@ -41,8 +45,15 @@ describe('UserService', () => {
   describe('getMeTest()', () => {
     describe('when called', () => {
       let user;
+      const hash = _user.hash;
       beforeEach(async () => {
+        // The following fn deletes the hash from the user object, make sure you restore it in afterEach,
+        // since the _user object is being used across tests
         user = await service.getMeTest(_user.id);
+      });
+
+      afterEach(async () => {
+        _user.hash = hash;
       });
 
       it('findUnique() should be called', () => {
@@ -54,9 +65,41 @@ describe('UserService', () => {
       });
 
       it('should return a user', () => {
-        expect(user.id).toEqual(_user.id);
+        expect(user.id).toBe(_user.id);
         expect(user.email).toBe(_user.email);
         expect(user.hash).toBe(undefined);
+      });
+    });
+  });
+
+  describe('createUser()', () => {
+    describe('when called', () => {
+      let createUserDtoStub;
+      let createUserSettingsDto;
+      let user;
+      beforeEach(async () => {
+        createUserSettingsDto = CreateUserSettingsDtoStub();
+        createUserDtoStub = createUserDtoStubStatic;
+        user = await service.createUser(createUserDtoStub);
+      });
+
+      it('create() should be called', () => {
+        expect(prismaService.user.create).toHaveBeenCalled();
+        expect(prismaService.user.create).toHaveBeenCalledWith({
+          data: {
+            ...createUserDtoStub,
+            userSettings: {
+              create: [...createUserSettingsDto],
+            },
+          },
+        });
+        expect(prismaService.user.create).toHaveReturnedWith(_user);
+      });
+      it('should create a user with user settings', () => {
+        expect(user.id).toBe(_user.id);
+        expect(user.email).toBe(_user.email);
+        expect(user.hash).toBe(createUserDtoStub.hash);
+        expect(user.userSettings).toMatchObject(createUserSettingsDto);
       });
     });
   });

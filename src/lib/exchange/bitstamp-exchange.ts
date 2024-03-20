@@ -5,7 +5,7 @@ import { GetExchangeDto } from 'src/lib/exchange/dto';
 import { BaseExchange } from 'src/lib/exchange/exchange.base';
 
 export class BitstampExchange extends BaseExchange {
-  public exchange: bitstamp;
+  public declare exchange: bitstamp;
   constructor(exchangeDto: GetExchangeDto) {
     super(exchangeDto);
     this.name = ExchangeNameEnum.BITSTAMP;
