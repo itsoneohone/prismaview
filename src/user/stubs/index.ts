@@ -76,4 +76,4 @@ export const UsersWithExpensesStub = () => {
     },
   ];
 };
-export const usersWithExpensesStubStatic = await UsersWithExpensesStub();
+export const usersWithExpensesStubStatic = UsersWithExpensesStub();
