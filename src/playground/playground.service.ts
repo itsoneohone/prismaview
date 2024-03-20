@@ -212,8 +212,8 @@ export class PlaygroundService {
   }
 
   async fetchKrakenOrders() {
-    const start = new Date(2023, 12, 1).getTime();
-    const end = new Date(2024, 2, 1).getTime();
+    const start = new Date(2024, 2, 1).getTime();
+    const end = new Date(2024, 2, 16).getTime();
     const since = undefined;
     console.log({
       startDate: new Date(start).toISOString(),
@@ -303,10 +303,13 @@ export class PlaygroundService {
   async fetchOhlcv() {
     const cryptoExchange: CryptoExchange = this.krakenExchange;
     const exchange = cryptoExchange.exchange;
-    const since = new Date('2024-02-28 18:02:47.124+00').getTime() / 1000;
+    await exchange.loadMarkets();
+
+    const since = new Date('2024-03-15 00:00:00.000+00').getTime() / 1000;
     return {
-      ohlcv: await exchange.fetchOHLCV('BTC/USD', '1m', since, 1),
-      api: exchange.api,
+      // timeframes: exchange.timeframes,
+      // markets: exchange.markets,
+      ohlcv: await exchange.fetchOHLCV('BTC/USD', '1m', since),
     };
   }
 }
