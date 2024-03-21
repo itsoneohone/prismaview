@@ -51,12 +51,12 @@ export const createOrderDtoStubStatic2 = CreateOrderDtoStub();
 const date = new Date();
 export const OrderStub = (
   userId: number,
-  dto: CreateOrderDto | UpdateOrderDto,
+  dto?: CreateOrderDto | UpdateOrderDto,
 ) => {
   const { filled, price, cost } = calculateOrderAmounts(dto.filled, dto.price);
   const { base, quote, currency } = getSymbolCurrencies(dto.symbol);
   return {
-    ...dto,
+    ...(dto || CreateOrderDtoStub()),
     userId,
     base,
     quote,

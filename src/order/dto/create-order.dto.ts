@@ -15,7 +15,6 @@ export class CreateOrderDto {
   @IsOptional()
   orderId: string;
 
-  @IsNumber()
   @IsOptional()
   timestamp: bigint;
 

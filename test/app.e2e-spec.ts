@@ -12,10 +12,14 @@ import { CreateExpenseDto, UpdateExpenseDto } from 'src/expense/dto';
 import { appMetadata } from 'src/app.module';
 import { APP_PORT, setupPipes } from 'src/app-config/app-config';
 import { CreateAccessKeyDtoStub } from 'src/access-key/stubs';
-import { CreateOrderDtoStub } from 'src/order/stubs';
+import { CreateOrderDtoStub, OrderStub } from 'src/order/stubs';
 import { DECIMAL_ROUNDING, getRandomAmount } from 'src/common/amounts';
 import { AccessKeyService } from 'src/access-key/access-key.service';
 import { access } from 'fs';
+import {
+  calculateOrderAmounts,
+  getSymbolCurrencies,
+} from 'src/order/common/utils';
 
 describe('App e2e', () => {
   let app: INestApplication;
@@ -202,7 +206,6 @@ describe('App e2e', () => {
           .expectStatus(HttpStatus.CREATED)
           .expectJsonLike({
             name: akDto1.name,
-            isDeleted: false,
             exchange: akDto1.exchange,
             userId: '$S{userId}',
           })
@@ -215,7 +218,6 @@ describe('App e2e', () => {
           .expectStatus(HttpStatus.CREATED)
           .expectJsonLike({
             name: akDto2.name,
-            isDeleted: false,
             exchange: akDto2.exchange,
             userId: '$S{userId}',
           })
@@ -259,6 +261,9 @@ describe('App e2e', () => {
   describe('Order', () => {
     const orderDto1 = CreateOrderDtoStub();
     const orderDto2 = CreateOrderDtoStub();
+    // Create teh order stubs to use against the response
+    const order1 = OrderStub(1, orderDto1);
+    const order2 = OrderStub(1, orderDto2);
 
     it('create orders', () => {
       return Promise.all([
@@ -269,18 +274,20 @@ describe('App e2e', () => {
           .withBody(orderDto1)
           .expectStatus(HttpStatus.CREATED)
           .expectJsonLike({
-            orderId: orderDto1.orderId,
-            status: orderDto1.status,
-            symbol: orderDto1.symbol,
-            type: orderDto1.type,
-            side: orderDto1.side,
+            orderId: order1.orderId,
+            status: order1.status,
+            symbol: order1.symbol,
+            type: order1.type,
+            side: order1.side,
             // All decimal amounts are serialized to strings
             // toString() is used to trim leading zeros
-            price: orderDto1.price.toString(),
-            filled: orderDto1.filled.toString(),
-            cost: orderDto1.cost.toString(),
-            fee: orderDto1.fee.toString(),
-            currency: orderDto1.currency,
+            price: order1.price.toString(),
+            filled: order1.filled.toString(),
+            cost: order1.cost.toString(),
+            fee: order1.fee.toString(),
+            currency: order1.currency,
+            base: order1.base,
+            quote: order1.quote,
             userId: '$S{userId}',
           })
           .stores('orderId1', 'id'),
@@ -291,29 +298,36 @@ describe('App e2e', () => {
           .withBody(orderDto2)
           .expectStatus(HttpStatus.CREATED)
           .expectJsonLike({
-            orderId: orderDto2.orderId,
-            status: orderDto2.status,
-            symbol: orderDto2.symbol,
-            type: orderDto2.type,
-            side: orderDto2.side,
+            orderId: order2.orderId,
+            status: order2.status,
+            symbol: order2.symbol,
+            type: order2.type,
+            side: order2.side,
             // All decimal amounts are serialized to strings
-            price: orderDto2.price.toString(),
-            filled: orderDto2.filled.toString(),
-            cost: orderDto2.cost.toString(),
-            fee: orderDto2.fee.toString(),
-            currency: orderDto2.currency,
+            price: order2.price.toString(),
+            filled: order2.filled.toString(),
+            cost: order2.cost.toString(),
+            fee: order2.fee.toString(),
+            currency: order2.currency,
+            base: order2.base,
+            quote: order2.quote,
             userId: '$S{userId}',
           })
           .stores('orderId2', 'id'),
       ]);
     });
     it('update order', () => {
-      const newPrice = getRandomAmount(100);
-      const newFilled = getRandomAmount(10);
-      const expectedCost = newPrice
-        .mul(newFilled)
-        .toDecimalPlaces(DECIMAL_ROUNDING);
-
+      const {
+        filled: newFilled,
+        price: newPrice,
+        cost: expectedCost,
+      } = calculateOrderAmounts(getRandomAmount(10), getRandomAmount(100));
+      const newSymbol = 'ETH/EUR';
+      const {
+        base: newBase,
+        quote: newQuote,
+        currency: newCurrency,
+      } = getSymbolCurrencies(newSymbol);
       return pactum
         .spec()
         .patch('/order/{id}')
@@ -322,20 +336,23 @@ describe('App e2e', () => {
         .withBody({
           price: newPrice,
           filled: newFilled,
+          symbol: newSymbol,
         })
         .expectStatus(HttpStatus.OK)
         .expectJsonLike({
-          orderId: orderDto1.orderId,
-          status: orderDto1.status,
-          symbol: orderDto1.symbol,
-          type: orderDto1.type,
-          side: orderDto1.side,
+          orderId: order1.orderId,
+          status: order1.status,
+          symbol: newSymbol,
+          type: order1.type,
+          side: order1.side,
           // All decimal amounts are serialized to strings
           price: newPrice.toString(),
           filled: newFilled.toString(),
           cost: expectedCost.toString(),
-          fee: orderDto1.fee.toString(),
-          currency: orderDto1.currency,
+          fee: order1.fee.toString(),
+          currency: newCurrency,
+          base: newBase,
+          quote: newQuote,
           userId: '$S{userId}',
         });
     });
