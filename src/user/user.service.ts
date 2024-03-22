@@ -52,11 +52,6 @@ export class UserService {
         firstName: true,
         lastName: true,
         createdAt: true,
-        _count: {
-          select: {
-            expenses: true,
-          },
-        },
       },
     });
   }

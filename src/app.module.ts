@@ -7,8 +7,6 @@ import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { UserModule } from './user/user.module';
 import { APP_GUARD } from '@nestjs/core';
-import { AdminGuard, SessionGuard } from './auth/guards';
-import { ExpenseModule } from './expense/expense.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SchedulerModule } from './scheduler/scheduler.module';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -30,7 +28,6 @@ export const appMetadata: ModuleMetadata = {
     AuthModule,
     PrismaModule,
     UserModule,
-    ExpenseModule,
     SchedulerModule,
     ScheduleModule.forRoot(),
     // CacheModule.register({
