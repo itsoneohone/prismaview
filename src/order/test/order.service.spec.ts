@@ -1,13 +1,14 @@
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
+import { after, before } from 'node:test';
 import { DECIMAL_ROUNDING, getRandomAmount } from 'src/common/amounts';
 import { PaginateDto, PaginateResultDto } from 'src/common/dto';
 import {
   SEARCH_LIMIT,
   preparePaginateResultDto,
 } from 'src/common/search-utils';
-import { CreateOrderDto } from 'src/order/dto';
+import { CreateOrderDto, UpdateOrderDto } from 'src/order/dto';
 import { OrderService } from 'src/order/order.service';
 import {
   createOrderDtoStubStatic,
@@ -88,8 +89,8 @@ describe('OrderService', () => {
     });
   });
 
-  describe('Update an existing order', () => {
-    describe('_updateOrderDto()', () => {
+  describe('Update an order using its ID', () => {
+    describe('_prepareUpdateOrderDto()', () => {
       let updateOrderDto;
       let updateOrder;
       let updatedOrderData;
@@ -244,33 +245,54 @@ describe('OrderService', () => {
       });
     });
 
-    // @TODO Add the tests
+    describe('updateOrderById()', () => {
+      // Use the static stubs used for auto mocking the prisma service
+      const createOrderDtoStub: CreateOrderDto = createOrderDtoStubStatic;
+      const updateOrderDtoStub: UpdateOrderDto = updateOrderDtoStubStatic;
+      const updatedOrderStub = updateOrderStubStatic;
+      let order;
+      let updatedOrder;
+      let getOrderByIdSpy;
+      let prepareUpdateOrderDtoSpy;
+      beforeAll(async () => {
+        getOrderByIdSpy = jest.spyOn(service, '_getOrderById');
+        getOrderByIdSpy.mockImplementation(() => order);
 
-    // describe('updateOrderById()', () => {
-    //   // Use the static stubs used for auto mocking the prisma service
-    //   const createOrderDto: CreateOrderDto = createOrderDtoStubStatic;
-    //   const orderStub = orderStubStatic;
-    //   let order;
+        prepareUpdateOrderDtoSpy = jest.spyOn(
+          service,
+          '_prepareUpdateOrderDto',
+        );
+        prepareUpdateOrderDtoSpy.mockImplementation(() => updateOrderDtoStub);
 
-    //   beforeAll(async () => {
-    //     order = await service.createOrder(user.id, createOrderDto);
-    //   });
+        order = await service.createOrder(user.id, createOrderDtoStub);
+        updatedOrder = await service.updateOrderById(
+          user.id,
+          order.id,
+          updateOrderDtoStub,
+        );
+      });
 
-    //   it('should call prisma.order.create()', () => {
-    //     expect(prisma.order.create).toHaveBeenCalled();
-    //     expect(prisma.order.create).toHaveBeenCalledWith({
-    //       data: {
-    //         ...createOrderDto,
-    //         userId: user.id,
-    //       },
-    //     });
-    //     expect(prisma.order.create).toHaveReturnedWith(orderStub);
-    //   });
+      afterAll(() => {
+        // Restore the original implementation
+        getOrderByIdSpy.mockRestore();
+        prepareUpdateOrderDtoSpy.mockRestore();
+      });
 
-    //   it('should create an order', () => {
-    //     expect(order).toMatchObject(orderStub);
-    //   });
-    // });
+      it('_getOrderById() and _prepareUpdateOrderDto() should be called', () => {
+        expect(service._getOrderById).toHaveBeenCalled;
+        expect(service._getOrderById).toHaveBeenCalledWith(user.id, order.id);
+        expect(service._getOrderById).toHaveReturnedWith(order);
+        expect(service._prepareUpdateOrderDto).toHaveBeenCalled;
+        expect(service._prepareUpdateOrderDto).toHaveBeenCalledWith(
+          updateOrderDtoStub,
+          order,
+        );
+      });
+
+      it('should update an order', () => {
+        expect(updatedOrder).toMatchObject(updatedOrderStub);
+      });
+    });
   });
 
   describe('getOrders()', () => {

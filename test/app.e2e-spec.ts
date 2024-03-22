@@ -186,14 +186,17 @@ describe('App e2e', () => {
       'EFBHt8XTPL6PdxH5Q1MkZ+LHtoZevONlzZZQkEvWnOpPjKhOsrgAmjINZ85Dlmj8e/35vCF7VWaS/uaAMurOzA==';
     const akDto1 = CreateAccessKeyDtoStub(krakenKey, krakenSecret);
     const akDto2 = CreateAccessKeyDtoStub(krakenKey, krakenSecret);
+    let validateApiCredentialsSpy;
 
     beforeEach(() => {
-      jest
-        .spyOn(accessKeyService, 'validateApiCredentials')
-        .mockImplementation(() => Promise.resolve());
+      validateApiCredentialsSpy = jest.spyOn(
+        accessKeyService,
+        'validateApiCredentials',
+      );
+      validateApiCredentialsSpy.mockImplementation(() => Promise.resolve());
     });
     afterAll(() => {
-      jest.resetAllMocks();
+      validateApiCredentialsSpy.mockRestore();
     });
 
     it('create access key', async () => {

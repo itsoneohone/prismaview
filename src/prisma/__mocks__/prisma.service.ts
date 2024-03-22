@@ -1,6 +1,10 @@
 import { accessKeyStubStatic, accessKeyStubs } from 'src/access-key/stubs';
 import { userStubStatic, usersWithExpensesStubStatic } from '../../user/stubs';
-import { orderStubStatic, orderStubs } from 'src/order/stubs';
+import {
+  orderStubStatic,
+  orderStubs,
+  updateOrderStubStatic,
+} from 'src/order/stubs';
 
 export const PrismaService = jest.fn().mockReturnValue({
   user: {
@@ -21,8 +25,9 @@ export const PrismaService = jest.fn().mockReturnValue({
   },
   order: {
     create: jest.fn().mockImplementation(() => orderStubStatic),
-    _getOrderById: jest.fn().mockImplementation(() => orderStubStatic),
+    findFirst: jest.fn().mockImplementation(() => orderStubStatic),
     findMany: jest.fn().mockImplementation(() => orderStubs),
     count: jest.fn().mockImplementation(() => orderStubs.length),
+    update: jest.fn().mockImplementation(() => updateOrderStubStatic),
   },
 });
