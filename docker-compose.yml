@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: Qwerty1!
-      POSTGRES_DB: expense_db
+      POSTGRES_DB: prismaview_db
     ports:
       - 5434:5432
   test-db:
@@ -15,7 +15,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: Qwerty1!
-      POSTGRES_DB: expense_db
+      POSTGRES_DB: prismaview_db
     ports:
       - 5435:5432
   redis:
