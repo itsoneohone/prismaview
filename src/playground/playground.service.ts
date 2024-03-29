@@ -1,40 +1,25 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import {
-  version as ccxtVersion,
-  exchanges as ccxtExchanges,
-  bitstamp,
-} from 'ccxt';
+import { version as ccxtVersion } from 'ccxt';
 import { ConfigService } from '@nestjs/config';
 import { sleep } from 'src/common/utils';
-import {
-  EMPTY,
-  catchError,
-  delay,
-  expand,
-  from,
-  map,
-  mergeMap,
-  of,
-  reduce,
-  tap,
-  zip,
-} from 'rxjs';
+import { EMPTY, catchError, delay, expand, reduce, tap } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { AxiosError } from 'axios';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { AccessKey, ExchangeNameEnum } from '@prisma/client';
+import { ExchangeNameEnum } from '@prisma/client';
 import { ExchangeFactory } from 'src/lib/exchange/exchange.factory';
 import { GetExchangeDto } from 'src/lib/exchange/dto';
 import { KrakenExchange } from 'src/lib/exchange/kraken-exchange';
 import { BitstampExchange } from 'src/lib/exchange/bitstamp-exchange';
 import { CryptoExchange } from 'src/lib/exchange/types';
-import { getCryptoExchange } from 'src/lib/exchange/common/utils';
 import { searchHasMoreData } from 'src/common/search-utils';
+import { BinanceExchange } from 'src/lib/exchange/binance-exchange';
 
 @Injectable()
 export class PlaygroundService {
   private krakenExchange;
   private bitstampExchange;
+  private binanceExchange;
   private logger = new Logger(PlaygroundService.name);
   constructor(
     private config: ConfigService,
@@ -50,6 +35,17 @@ export class PlaygroundService {
     };
     this.krakenExchange = ExchangeFactory.create(krakenDto) as KrakenExchange;
 
+    const binanceDto: GetExchangeDto = {
+      userId: 1,
+      accessKeyId: 1,
+      key: this.config.getOrThrow('BINANCE_API_KEY'),
+      secret: this.config.getOrThrow('BINANCE_SECRET'),
+      exchange: ExchangeNameEnum.BINANCE,
+    };
+    this.binanceExchange = ExchangeFactory.create(
+      binanceDto,
+    ) as BinanceExchange;
+
     const bitstampDto: GetExchangeDto = {
       userId: 1,
       accessKeyId: 1,
@@ -60,6 +56,16 @@ export class PlaygroundService {
     this.bitstampExchange = ExchangeFactory.create(
       bitstampDto,
     ) as BitstampExchange;
+  }
+
+  _getCryptoExchange(exchangeName: ExchangeNameEnum) {
+    const exchangeMapping = {
+      [ExchangeNameEnum.BINANCE]: this.binanceExchange,
+      [ExchangeNameEnum.BITSTAMP]: this.bitstampExchange,
+      [ExchangeNameEnum.KRAKEN]: this.krakenExchange,
+    };
+
+    return exchangeMapping[exchangeName];
   }
 
   _prepareAPIEndpoint(page) {
@@ -165,8 +171,17 @@ export class PlaygroundService {
     return paginationObs;
   }
 
-  async isAccessLimited() {
-    return this.krakenExchange.validateCredentialLimitations();
+  async validateCredentials(exchangeName: ExchangeNameEnum) {
+    const cryptoExchange = this._getCryptoExchange(
+      exchangeName,
+    ) as CryptoExchange;
+    const [validateCredentials, validateCredentialLimitations] =
+      await Promise.all([
+        cryptoExchange.validateCredentials(),
+        cryptoExchange.validateCredentialLimitations(),
+      ]);
+
+    return { validateCredentials, validateCredentialLimitations };
   }
 
   async exchangeSupports(cryptoExchangeName: string, lookFor?: string) {
@@ -191,8 +206,10 @@ export class PlaygroundService {
     };
   }
 
-  async loadMarkets() {
-    const cryptoExchange: CryptoExchange = this.krakenExchange;
+  async loadMarkets(exchangeName: ExchangeNameEnum) {
+    const cryptoExchange: CryptoExchange = exchangeName
+      ? this._getCryptoExchange(exchangeName)
+      : this.krakenExchange;
     const exchange = cryptoExchange.exchange;
 
     return exchange.loadMarkets();
@@ -300,16 +317,56 @@ export class PlaygroundService {
     // };
   }
 
-  async fetchOhlcv() {
-    const cryptoExchange: CryptoExchange = this.krakenExchange;
+  async fetchTicker(exchangeName: ExchangeNameEnum, market: string) {
+    const cryptoExchange: CryptoExchange = exchangeName
+      ? this._getCryptoExchange(exchangeName)
+      : this.krakenExchange;
+    const exchange = cryptoExchange.exchange;
+
+    await exchange.loadMarkets();
+
+    if (!exchange.markets[market]) {
+      throw new BadRequestException(
+        `${cryptoExchange.getName()} does not support market '${market}'`,
+      );
+    }
+
+    return exchange.fetchTicker(market);
+  }
+
+  async fetchOhlcv(
+    exchangeName: ExchangeNameEnum,
+    market: string,
+    sinceDateString: string,
+    limit?: number,
+  ) {
+    // Check if the date is valid
+    let since = new Date(sinceDateString).getTime();
+    if (isNaN(since)) {
+      since = new Date().getTime();
+    }
+
+    const cryptoExchange: CryptoExchange = exchangeName
+      ? this._getCryptoExchange(exchangeName)
+      : this.krakenExchange;
     const exchange = cryptoExchange.exchange;
     await exchange.loadMarkets();
 
-    const since = new Date('2024-03-15 00:00:00.000+00').getTime() / 1000;
-    return {
-      // timeframes: exchange.timeframes,
-      // markets: exchange.markets,
-      ohlcv: await exchange.fetchOHLCV('BTC/USD', '1m', since),
-    };
+    if (!exchange.markets[market]) {
+      throw new BadRequestException({
+        field: 'market',
+        error: `${this.binanceExchange.name} does not support the '${market}' market.`,
+      });
+    }
+
+    console.log({ market, sinceDateString, since, limit });
+
+    const ohlcv = await exchange.fetchOHLCV(market, '1m', since, limit);
+
+    const ohlcvWitDate = ohlcv.map((item) => {
+      return [new Date(item[0]).toISOString(), ...item];
+    });
+
+    return { ohlcv: ohlcvWitDate };
   }
 }

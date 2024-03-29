@@ -13,7 +13,8 @@ export class BaseExchange {
   protected name: string;
   // Limit the requests to the exchange - e.g. If set to 2000ms, it will allow one request every 2 secs.
   protected accessKeyId: number;
-  protected requestDelay = 2000;
+  // Read more on rateLimit here: https://github.com/ccxt/ccxt/wiki/Manual#rate-limit
+  protected rateLimit = 2000;
   public exchange;
   readonly userId: number;
   readonly apiKey: string;

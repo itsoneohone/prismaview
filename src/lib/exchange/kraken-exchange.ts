@@ -10,12 +10,15 @@ export class KrakenExchange extends BaseExchange {
   constructor(exchangeDto: GetExchangeDto) {
     super(exchangeDto);
     this.name = ExchangeNameEnum.KRAKEN;
+    // Respect the exchange's rate limits (https://docs.kraken.com/rest/#section/Rate-Limits)
+    this.rateLimit = 3000;
     this.exchange = new kraken({
       apiKey: this.apiKey,
       secret: this.apiSecret,
+      // Rate limit config
+      enableRateLimit: true, // Enabled by default
+      rateLimit: this.rateLimit,
     });
-    // Respect the exchange's rate limits (https://docs.kraken.com/rest/#section/Rate-Limits)
-    this.requestDelay = this.exchange.rateLimit;
 
     // Enable debug mode to see the HTTP requests and responses in details
     // this.exchange.verbose = true;
@@ -106,13 +109,11 @@ export class KrakenExchange extends BaseExchange {
       }),
       tap(() => this.logger.log(`Fetched page: ${page}, ofs: ${ofs}`)),
       tap(() =>
-        this.logger.log(
-          `Going to sleep for ${this.requestDelay / 1000}secs...`,
-        ),
+        this.logger.log(`Going to sleep for ${this.rateLimit / 1000}secs...`),
       ),
       // Delay the next request to respect the exchange rate limits
-      delay(this.requestDelay),
-      tap(() => this.logger.log(`Slept for ${this.requestDelay / 1000}secs`)),
+      delay(this.rateLimit),
+      tap(() => this.logger.log(`Slept for ${this.rateLimit / 1000}secs`)),
       // Use expand to recursively request the next pages
       expand((res) => {
         if (res.length < pageSize) {
@@ -136,13 +137,11 @@ export class KrakenExchange extends BaseExchange {
           tap(() => this.logger.log(`  - Fetched page: ${page}, ofs: ${ofs}`)),
           tap(() =>
             this.logger.log(
-              `About to sleep for ${this.requestDelay / 1000}secs...`,
+              `About to sleep for ${this.rateLimit / 1000}secs...`,
             ),
           ),
-          delay(this.requestDelay),
-          tap(() =>
-            this.logger.log(`Slept for ${this.requestDelay / 1000}secs`),
-          ),
+          delay(this.rateLimit),
+          tap(() => this.logger.log(`Slept for ${this.rateLimit / 1000}secs`)),
         );
       }),
       tap(() => this.logger.log(`    * Processing page ${page}`)),

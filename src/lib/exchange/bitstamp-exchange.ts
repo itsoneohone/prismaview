@@ -9,12 +9,15 @@ export class BitstampExchange extends BaseExchange {
   constructor(exchangeDto: GetExchangeDto) {
     super(exchangeDto);
     this.name = ExchangeNameEnum.BITSTAMP;
+    // Respect the exchange's rate limits - @todo check the bitstamp rateLimits
+    this.rateLimit = 1000;
     this.exchange = new bitstamp({
       apiKey: this.apiKey,
       secret: this.apiSecret,
+      // Rate limit config
+      enableRateLimit: true, // Enabled by default
+      rateLimit: this.rateLimit,
     });
-    // Respect the exchange's rate limits (https://docs.kraken.com/rest/#section/Rate-Limits)
-    this.requestDelay = 1000;
   }
 
   async validateCredentials() {

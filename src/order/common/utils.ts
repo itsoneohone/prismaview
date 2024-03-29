@@ -12,18 +12,18 @@ import { DECIMAL_ROUNDING, Decimal } from 'src/common/amounts';
  * @param symbol
  * @returns { base, quote, currency }
  */
-export function getSymbolCurrencies(symbol: string) {
-  const symbolCurrencies = symbol.split('/');
+export function getTickerSymbols(symbol: string) {
+  const tickerSymbols = symbol.split('/');
 
-  if (symbolCurrencies.length !== 2) {
+  if (tickerSymbols.length !== 2) {
     throw new Error(`Invalid symbol '${symbol}'.`);
   }
 
   return {
-    base: symbolCurrencies[0],
-    quote: symbolCurrencies[1],
+    base: tickerSymbols[0],
+    quote: tickerSymbols[1],
     // All order amounts are designated in the quote currency
-    currency: symbolCurrencies[1],
+    currency: tickerSymbols[1],
   };
 }
 

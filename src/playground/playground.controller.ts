@@ -1,4 +1,5 @@
 import { Body, Controller, Get } from '@nestjs/common';
+import { ExchangeNameEnum } from '@prisma/client';
 import { PlaygroundService } from 'src/playground/playground.service';
 
 @Controller('playground')
@@ -10,9 +11,9 @@ export class PlaygroundController {
     return this.playgroundService.ccxtInfo();
   }
 
-  @Get('/access-limited')
-  isAccessLimitedToReporting() {
-    return this.playgroundService.isAccessLimited();
+  @Get('/validate-credentials')
+  validateCredentials(@Body('exchangeName') exchangeName: ExchangeNameEnum) {
+    return this.playgroundService.validateCredentials(exchangeName);
   }
 
   @Get('/supports')
@@ -44,13 +45,31 @@ export class PlaygroundController {
   }
 
   @Get('load-markets')
-  loadMarkets() {
-    return this.playgroundService.loadMarkets();
+  loadMarkets(@Body('exchangeName') exchangeName: ExchangeNameEnum) {
+    return this.playgroundService.loadMarkets(exchangeName);
+  }
+
+  @Get('fetch-ticker')
+  fetchTicker(
+    @Body('exchangeName') exchangeName: ExchangeNameEnum,
+    @Body('market') market: string,
+  ) {
+    return this.playgroundService.fetchTicker(exchangeName, market);
   }
 
   @Get('fetch-ohlcv')
-  fetchOhlcv() {
-    return this.playgroundService.fetchOhlcv();
+  fetchOhlcv(
+    @Body('exchangeName') exchangeName: ExchangeNameEnum,
+    @Body('market') market: string,
+    @Body('since') since: string,
+    @Body('limit') limit?: number,
+  ) {
+    return this.playgroundService.fetchOhlcv(
+      exchangeName,
+      market,
+      since,
+      limit,
+    );
   }
 
   // @Get('playground')

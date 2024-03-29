@@ -99,7 +99,7 @@ export class AuthService {
       role,
     };
     const jwtSignOptions: JwtSignOptions = {
-      expiresIn: '60m',
+      expiresIn: this.config.get('JWT_EXPIRES_IN'),
       secret: this.config.get('JWT_SECRET'),
     };
     const accessToken = await this.jwt.signAsync(payload, jwtSignOptions);

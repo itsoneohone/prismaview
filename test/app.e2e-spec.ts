@@ -16,7 +16,7 @@ import { getRandomAmount } from 'src/common/amounts';
 import { AccessKeyService } from 'src/access-key/access-key.service';
 import {
   calculateOrderAmounts,
-  getSymbolCurrencies,
+  getTickerSymbols,
 } from 'src/order/common/utils';
 
 describe('App e2e', () => {
@@ -253,7 +253,7 @@ describe('App e2e', () => {
         base: newBase,
         quote: newQuote,
         currency: newCurrency,
-      } = getSymbolCurrencies(newSymbol);
+      } = getTickerSymbols(newSymbol);
       return pactum
         .spec()
         .patch('/order/{id}')

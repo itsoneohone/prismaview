@@ -20,7 +20,7 @@ import { SyncMode } from 'src/lib/exchange/exchange.base';
 import { getCryptoExchange } from 'src/lib/exchange/common/utils';
 import {
   calculateOrderAmounts,
-  getSymbolCurrencies,
+  getTickerSymbols,
 } from 'src/order/common/utils';
 
 @Injectable()
@@ -63,7 +63,7 @@ export class OrderService {
       // Convert filled and price amounts to decimal and calculate cost
       ...calculateOrderAmounts(dto.filled, dto.price),
       // Get the base, quote and currency values
-      ...getSymbolCurrencies(dto.symbol),
+      ...getTickerSymbols(dto.symbol),
       // Get the unix timestamp based on the input date
       timestamp: BigInt(new Date(dto.datetime).getTime()),
     };
@@ -100,7 +100,7 @@ export class OrderService {
       dto = {
         ...dto,
         // Update base, quote and currency
-        ...getSymbolCurrencies(dto.symbol),
+        ...getTickerSymbols(dto.symbol),
       };
     }
 

@@ -1,5 +1,5 @@
 import { OrderSideEnum, OrderStatusEnum, OrderTypeEnum } from '@prisma/client';
-import { getSymbolCurrencies } from 'src/order/common/utils';
+import { getTickerSymbols } from 'src/order/common/utils';
 import { CreateOrderDto } from 'src/order/dto';
 
 /**
@@ -15,7 +15,7 @@ export const makeOrderDtoUsingCcxtOrder = (
   accessKeyId: number,
   ccxtOrder,
 ): CreateOrderDto => {
-  const { base, quote, currency } = getSymbolCurrencies(ccxtOrder.symbol);
+  const { base, quote, currency } = getTickerSymbols(ccxtOrder.symbol);
 
   return {
     orderId: ccxtOrder.id,

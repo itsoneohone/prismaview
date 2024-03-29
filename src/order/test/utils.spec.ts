@@ -1,6 +1,6 @@
 import { DECIMAL_ROUNDING, Decimal } from 'src/common/amounts';
 import {
-  getSymbolCurrencies,
+  getTickerSymbols,
   calculateOrderAmounts,
 } from 'src/order/common/utils';
 
@@ -63,7 +63,7 @@ describe('getSymbolCurrencies', () => {
   const wrongSymbol = [base, quote].join('');
 
   it('should throw an error if the symbol does not separate the base and quote using a `/`', () => {
-    expect(() => getSymbolCurrencies(wrongSymbol)).toThrow(
+    expect(() => getTickerSymbols(wrongSymbol)).toThrow(
       `Invalid symbol '${wrongSymbol}'.`,
     );
   });
@@ -73,7 +73,7 @@ describe('getSymbolCurrencies', () => {
       base: returnedBase,
       quote: returnedQuote,
       currency: returnedCurrency,
-    } = getSymbolCurrencies(symbol);
+    } = getTickerSymbols(symbol);
 
     expect(returnedBase).toEqual(base);
     expect(returnedQuote).toEqual(quote);

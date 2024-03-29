@@ -9,7 +9,7 @@ import { CreateOrderDto, UpdateOrderDto } from 'src/order/dto';
 import { DECIMAL_ROUNDING, getRandomAmount } from 'src/common/amounts';
 import { userStubStatic } from 'src/user/stubs';
 import {
-  getSymbolCurrencies,
+  getTickerSymbols,
   calculateOrderAmounts,
 } from 'src/order/common/utils';
 
@@ -54,7 +54,7 @@ export const OrderStub = (
   dto?: CreateOrderDto | UpdateOrderDto,
 ) => {
   const { filled, price, cost } = calculateOrderAmounts(dto.filled, dto.price);
-  const { base, quote, currency } = getSymbolCurrencies(dto.symbol);
+  const { base, quote, currency } = getTickerSymbols(dto.symbol);
   return {
     ...(dto || CreateOrderDtoStub()),
     userId,
