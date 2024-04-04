@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ExchangeNameEnum } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
@@ -13,6 +13,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class PriceService {
+  private logger = new Logger(PriceService.name);
   private bitstampExchange;
   private binanceExchange;
 
@@ -141,5 +142,7 @@ export class PriceService {
     return response;
   }
 
-  async fetchHistoricalPrices() {}
+  async cmdFetchHistoricalPrices() {
+    console.log('In price service');
+  }
 }
