@@ -144,11 +144,11 @@ export class SchedulerService {
     let validBinanceBtcMarket;
     let validBitstampBtcMarket;
     for (const market of btcMarkets) {
-      if (binanceMarkets[market]) {
-        validBinanceBtcMarket = market;
-        break;
-      } else if (bitstampMarkets[market]) {
+      if (bitstampMarkets[market]) {
         validBitstampBtcMarket = market;
+        break;
+      } else if (binanceMarkets[market]) {
+        validBinanceBtcMarket = market;
         break;
       }
     }
@@ -201,10 +201,10 @@ export class SchedulerService {
         tickerSymbolFiatMarkets.push(pair);
       } else {
         // This is a crypto ticker symbol, check it against the supported markets
-        if (binanceMarkets[pair]) {
-          tickerSymbolCryptoMarkets[ExchangeNameEnum.BINANCE].push(pair);
-        } else if (bitstampMarkets[pair]) {
+        if (bitstampMarkets[pair]) {
           tickerSymbolCryptoMarkets[ExchangeNameEnum.BITSTAMP].push(pair);
+        } else if (binanceMarkets[pair]) {
+          tickerSymbolCryptoMarkets[ExchangeNameEnum.BINANCE].push(pair);
         } else {
           unsupportedMarkets.push(pair);
         }
@@ -262,10 +262,10 @@ export class SchedulerService {
             ) === -1
           ) {
             // Check if the pair is availabe in Binance or Bitstamp
-            if (!binanceMarkets[market]) {
-              tickerSymbolCryptoMarkets[ExchangeNameEnum.BINANCE].push(market);
-            } else if (!bitstampMarkets[market]) {
+            if (!bitstampMarkets[market]) {
               tickerSymbolCryptoMarkets[ExchangeNameEnum.BITSTAMP].push(market);
+            } else if (!binanceMarkets[market]) {
+              tickerSymbolCryptoMarkets[ExchangeNameEnum.BINANCE].push(market);
             } else {
               // The pair is not available in any of the available exchanges.
               atLeastOneFailedMarket = true;

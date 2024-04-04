@@ -14,6 +14,7 @@ import { BitstampExchange } from 'src/lib/exchange/bitstamp-exchange';
 import { CryptoExchange } from 'src/lib/exchange/types';
 import { searchHasMoreData } from 'src/common/search-utils';
 import { BinanceExchange } from 'src/lib/exchange/binance-exchange';
+import { PriceService } from 'src/price/price.service';
 
 @Injectable()
 export class PlaygroundService {
@@ -25,6 +26,7 @@ export class PlaygroundService {
     private config: ConfigService,
     private httpService: HttpService,
     private prisma: PrismaService,
+    private priceService: PriceService,
   ) {
     const krakenDto: GetExchangeDto = {
       userId: 1,
@@ -223,7 +225,11 @@ export class PlaygroundService {
     const code = undefined;
     const since = undefined;
     const limit = undefined;
-    const ledger = await exchange.fetchLedger(code, since, limit);
+    const ledger = await exchange.fetchLedger(code, since, limit, {
+      start: new Date(2023, 11, 1).getTime() / 1000,
+      end: new Date(2024, 1, 1).getTime() / 1000,
+      ofs: 50,
+    });
 
     return { ledger };
   }
@@ -340,33 +346,11 @@ export class PlaygroundService {
     sinceDateString: string,
     limit?: number,
   ) {
-    // Check if the date is valid
-    let since = new Date(sinceDateString).getTime();
-    if (isNaN(since)) {
-      since = new Date().getTime();
-    }
-
-    const cryptoExchange: CryptoExchange = exchangeName
-      ? this._getCryptoExchange(exchangeName)
-      : this.krakenExchange;
-    const exchange = cryptoExchange.exchange;
-    await exchange.loadMarkets();
-
-    if (!exchange.markets[market]) {
-      throw new BadRequestException({
-        field: 'market',
-        error: `${this.binanceExchange.name} does not support the '${market}' market.`,
-      });
-    }
-
-    console.log({ market, sinceDateString, since, limit });
-
-    const ohlcv = await exchange.fetchOHLCV(market, '1m', since, limit);
-
-    const ohlcvWitDate = ohlcv.map((item) => {
-      return [new Date(item[0]).toISOString(), ...item];
-    });
-
-    return { ohlcv: ohlcvWitDate };
+    return this.priceService.fetchOhlcv(
+      exchangeName,
+      market,
+      sinceDateString,
+      limit,
+    );
   }
 }

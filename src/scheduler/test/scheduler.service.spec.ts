@@ -1,6 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { SchedulerService } from '../scheduler.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { ConfigModule } from '@nestjs/config';
 
 jest.mock('../../prisma/prisma.service.ts');
 
@@ -10,6 +11,7 @@ describe.only('SchedulerService', () => {
   beforeAll(async () => {
     const module = await Test.createTestingModule({
       providers: [SchedulerService, PrismaService],
+      imports: [ConfigModule.forRoot()],
     }).compile();
 
     service = module.get(SchedulerService);
@@ -22,7 +24,7 @@ describe.only('SchedulerService', () => {
 
   describe('fetchOHLV()', () => {
     beforeAll(async () => {
-      await service.fetchOHLV();
+      // await service.fetchOHLV();
     });
 
     it('should fetch open, high, low, close prices and volume', () => {

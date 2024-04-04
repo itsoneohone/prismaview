@@ -101,6 +101,28 @@ model Order {
   @@map("order")
 }
 
+model Price {
+  id        Int              @id @default(autoincrement())
+  symbol    String           @db.VarChar(16)
+  base      String           @db.VarChar(8)
+  quote     String           @db.VarChar(8)
+  open      Decimal          @db.Decimal(20, 8)
+  high      Decimal          @db.Decimal(20, 8)
+  low       Decimal          @db.Decimal(20, 8)
+  close     Decimal          @db.Decimal(20, 8)
+  volume    Decimal          @db.Decimal(20, 8)
+  timestamp BigInt
+  datetime  DateTime         @db.Timestamptz()
+  exchange  ExchangeNameEnum
+  createdAt DateTime         @default(now()) @db.Timestamptz()
+  updatedAt DateTime         @updatedAt @db.Timestamptz()
+
+  @@unique([symbol, datetime, exchange])
+  @@index([symbol])
+  @@index([datetime])
+  @@map("price")
+}
+
 enum OrderCreatedByEnum {
   USER
   SCRIPT

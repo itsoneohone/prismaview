@@ -18,6 +18,9 @@ export class BitstampExchange extends BaseExchange {
       enableRateLimit: true, // Enabled by default
       rateLimit: this.rateLimit,
     });
+
+    // Enable debug mode to see the HTTP requests and responses in details
+    this.exchange.verbose = true;
   }
 
   async validateCredentials() {

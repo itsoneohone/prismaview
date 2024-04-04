@@ -18,6 +18,7 @@ import { JwtGuard } from 'src/auth/guards/jwt.guard';
 import { HttpModule } from '@nestjs/axios';
 import { AccessKeyModule } from './access-key/access-key.module';
 import { PlaygroundModule } from './playground/playground.module';
+import { PriceModule } from './price/price.module';
 
 export const appMetadata: ModuleMetadata = {
   imports: [
@@ -50,6 +51,7 @@ export const appMetadata: ModuleMetadata = {
     OrderModule,
     EventsModule,
     AccessKeyModule,
+    PriceModule,
   ],
   controllers: [AppController],
   providers: [

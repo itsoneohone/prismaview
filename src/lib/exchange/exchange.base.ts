@@ -1,4 +1,5 @@
 import { Logger } from '@nestjs/common';
+import { ExchangeNameEnum } from '@prisma/client';
 import { Observable } from 'rxjs';
 import { GetExchangeDto } from 'src/lib/exchange/dto';
 
@@ -10,7 +11,7 @@ export enum SyncMode {
 
 export class BaseExchange {
   protected logger;
-  protected name: string;
+  protected name: ExchangeNameEnum;
   // Limit the requests to the exchange - e.g. If set to 2000ms, it will allow one request every 2 secs.
   protected accessKeyId: number;
   // Read more on rateLimit here: https://github.com/ccxt/ccxt/wiki/Manual#rate-limit
