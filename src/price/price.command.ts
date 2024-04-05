@@ -1,10 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ExchangeNameEnum } from '@prisma/client';
 import { Command, Option, Positional } from 'nestjs-command';
 import { PriceService } from 'src/price/price.service';
 
 @Injectable()
 export class PriceCommand {
+  private readonly logger = new Logger('PriceCommand');
   constructor(private priceService: PriceService) {}
 
   @Command({
@@ -28,8 +28,13 @@ export class PriceCommand {
     })
     market: string,
   ) {
-    console.debug('Start fetcing historical prices');
-    console.debug(`exchangeName: ${exchange}, market: ${market}`);
+    const startTs = new Date().getTime();
+    this.logger.debug('[START] Fetch historical prices');
+    this.logger.debug(`exchangeName: ${exchange}, market: ${market}`);
     await this.priceService.cmdFetchHistoricalPrices();
+    const endTs = new Date().getTime();
+    this.logger.log(
+      `Fetched distinct traded markets in ${endTs - startTs} secs`,
+    );
   }
 }

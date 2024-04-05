@@ -10,7 +10,7 @@ export enum SyncMode {
 }
 
 export class BaseExchange {
-  protected logger;
+  protected logger = new Logger(BaseExchange.name);
   protected name: ExchangeNameEnum;
   // Limit the requests to the exchange - e.g. If set to 2000ms, it will allow one request every 2 secs.
   protected accessKeyId: number;
@@ -27,9 +27,6 @@ export class BaseExchange {
     this.accessKeyId = accessKeyId;
     this.apiKey = key;
     this.apiSecret = secret;
-
-    // Set up the logger
-    this.logger = new Logger(this.name);
   }
 
   getName() {
