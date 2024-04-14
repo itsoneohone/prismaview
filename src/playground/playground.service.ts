@@ -212,9 +212,7 @@ export class PlaygroundService {
     const cryptoExchange: CryptoExchange = exchangeName
       ? this._getCryptoExchange(exchangeName)
       : this.krakenExchange;
-    const exchange = cryptoExchange.exchange;
-
-    return exchange.loadMarkets();
+    return cryptoExchange.loadMarkets();
   }
 
   async fetchKrakenLedger() {

@@ -1,4 +1,5 @@
 import { FiatCurrency } from 'src/lib/common/constants';
+import { FetchDirection } from 'src/price/common/constants';
 
 export function isFiat(tickerSymbol: string): Boolean {
   return Object.keys(FiatCurrency).indexOf(tickerSymbol) > -1;
@@ -9,6 +10,7 @@ export function createPair(base, quote): string {
 }
 
 /**
+ * Calculate the start timestamp given an endDate and a timeframe in mins
  *
  * @param endTimestamp Unix timestamp in milliseconds
  */
@@ -23,5 +25,51 @@ export function calculateStartTimestamp(
     throw new Error(`Invalid endDate '${endDate}'`);
   }
 
-  return endTimestamp - timeframeInMins * 60 * 1000;
+  return endTimestamp - (timeframeInMins - 1) * 60 * 1000;
+}
+
+/**
+ * Given a starting date, calculate the 'start' and 'end' params that will be used
+ * to fetch historical prices.
+ *
+ * The command sets the the 'start' and 'end' params by taking into account the
+ * fetch direction:
+ * 1. ASC: the command fetch prices from the starting point date onwards:
+ *   - start: the provided starting point timestamp.
+ *   - end: start + (timeframeInMins - 1) * 60 (secs) * 1000 (ms)
+ * 2. DESC: the command fetch prices from the starting point date backwards:
+ *   - end: the provided starting point timestamp.
+ *   - end: start - (timeframeInMins - 1) * 60 (secs) * 1000 (ms)
+ *
+ * @param startingDate date object, date string, timestamp
+ * @param timeframeInMins Timeframe refers to the length of time each price point represents (e.g. 1m, 5m, 10m).
+ *                        By default we use '1m' to account for price volatility, so the timeframeInMins
+ *                        is essentially the 'limit' param used when we fetch price data points from an
+ *                        exchange.
+ * @param direction FetchDirection
+ * @returns
+ */
+export function getFetchPriceLimits(
+  startingDate: number | Date | string,
+  timeframeInMins: number,
+  direction: FetchDirection,
+) {
+  const validatedStartingDate = new Date(startingDate);
+  const validatedStartingTimestamp = validatedStartingDate.getTime();
+
+  if (isNaN(validatedStartingTimestamp) || validatedStartingTimestamp < 0) {
+    throw new Error(`Invalid startingDate '${startingDate}'`);
+  }
+
+  let start;
+  let end;
+  if (direction === FetchDirection.ASC) {
+    start = validatedStartingTimestamp;
+    end = start + (timeframeInMins - 1) * 60 * 1000;
+  } else {
+    end = validatedStartingTimestamp;
+    start = end - (timeframeInMins - 1) * 60 * 1000;
+  }
+
+  return { start, end };
 }
