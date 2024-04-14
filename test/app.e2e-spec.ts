@@ -18,11 +18,13 @@ import {
   calculateOrderAmounts,
   getTickerSymbols,
 } from 'src/order/common/utils';
+import { ConfigService } from '@nestjs/config';
 
 describe('App e2e', () => {
   let app: INestApplication;
   let prisma: PrismaService;
   let accessKeyService: AccessKeyService;
+  let config: ConfigService;
 
   beforeAll(async () => {
     const module = await Test.createTestingModule(appMetadata).compile();
@@ -30,6 +32,7 @@ describe('App e2e', () => {
 
     prisma = app.get(PrismaService);
     accessKeyService = app.get(AccessKeyService);
+    config = app.get(ConfigService);
 
     // Set up pipes
     setupPipes(app);
@@ -102,14 +105,18 @@ describe('App e2e', () => {
   });
 
   describe('AccessKey', () => {
-    // Real kraken credentials for test purposes
-    const krakenKey =
-      'KowBIWYBFu7wj4Q2txKyzohe6xSZ+IY4jFHAHiOUsSOzv1CIDQ0MOvBl';
-    const krakenSecret =
-      'EFBHt8XTPL6PdxH5Q1MkZ+LHtoZevONlzZZQkEvWnOpPjKhOsrgAmjINZ85Dlmj8e/35vCF7VWaS/uaAMurOzA==';
-    const akDto1 = CreateAccessKeyDtoStub(krakenKey, krakenSecret);
-    const akDto2 = CreateAccessKeyDtoStub(krakenKey, krakenSecret);
+    let krakenKey;
+    let krakenSecret;
+    let akDto1;
+    let akDto2;
     let validateApiCredentialsSpy;
+
+    beforeAll(() => {
+      krakenKey = config.get('KRAKEN_API_KEY');
+      krakenSecret = config.get('KRAKEN_SECRET');
+      akDto1 = CreateAccessKeyDtoStub(krakenKey, krakenSecret);
+      akDto2 = CreateAccessKeyDtoStub(krakenKey, krakenSecret);
+    });
 
     beforeEach(() => {
       validateApiCredentialsSpy = jest.spyOn(
