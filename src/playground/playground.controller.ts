@@ -25,8 +25,8 @@ export class PlaygroundController {
   }
 
   @Get('/my-kraken-ledger')
-  myKrakenLedger() {
-    return this.playgroundService.fetchKrakenLedger();
+  myKrakenLedger(@Body('exchangeName') exchangeName: ExchangeNameEnum) {
+    return this.playgroundService.fetchKrakenLedger(exchangeName);
   }
 
   @Get('/my-kraken-orders')
@@ -39,9 +39,9 @@ export class PlaygroundController {
     return this.playgroundService.fetchKrakenOrder(orderId);
   }
 
-  @Get('/my-bitstamp-orders')
-  myBitstampOrders() {
-    return this.playgroundService.fetchΒitstampOrders();
+  @Get('/my-orders')
+  myOrders(@Body('exchangeName') exchangeName: ExchangeNameEnum) {
+    return this.playgroundService.fetchOrders(exchangeName);
   }
 
   @Get('load-markets')

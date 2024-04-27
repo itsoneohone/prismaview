@@ -13,14 +13,20 @@ import {
 } from 'rxjs';
 import { GetExchangeDto } from 'src/lib/exchange/dto';
 import { BaseExchange } from 'src/lib/exchange/exchange.base';
+import { FetchDirection } from 'src/price/common/constants';
 
 export class BinanceExchange extends BaseExchange {
   public declare exchange: binance;
+  public declare readonly rateLimit: number;
+  public declare readonly fetchLimit: number;
+  public declare readonly fetchDirection: FetchDirection;
   constructor(exchangeDto: GetExchangeDto) {
     super(exchangeDto);
     this.name = ExchangeNameEnum.BINANCE;
     // Respect the exchange's rate limits (https://binance-docs.github.io/apidocs/spot/en/#limits)
     this.rateLimit = 3000;
+    this.fetchLimit = 500;
+    this.fetchDirection = FetchDirection.ASC;
     this.exchange = new binance({
       apiKey: this.apiKey,
       secret: this.apiSecret,
@@ -30,7 +36,7 @@ export class BinanceExchange extends BaseExchange {
     });
 
     // Enable debug mode to see the HTTP requests and responses in details
-    // this.exchange.verbose = true;
+    this.exchange.verbose = true;
   }
 
   /**

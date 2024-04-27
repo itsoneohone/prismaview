@@ -13,7 +13,7 @@ import * as hbs from 'hbs';
 import { ValidationError } from 'class-validator';
 
 export const APP_PORT = 3333;
-export const ENABLE_LOGGING = true;
+export const ENABLE_DB_LOGGING = false;
 
 /**
  * Setup session middleware with persistent sessions in Redis

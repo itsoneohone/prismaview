@@ -215,28 +215,39 @@ export class PlaygroundService {
     return cryptoExchange.loadMarkets();
   }
 
-  async fetchKrakenLedger() {
+  async fetchKrakenLedger(exchangeName: ExchangeNameEnum) {
     // const start = new Date(2023, 12, 1).getTime();
     // https://docs.ccxt.com/#/README?id=ledger
-    const cryptoExchange: CryptoExchange = this.krakenExchange;
+    const cryptoExchange: CryptoExchange =
+      this._getCryptoExchange(exchangeName);
     const exchange = cryptoExchange.exchange;
-    const code = undefined;
+    const code = 'USDT';
     const since = undefined;
     const limit = undefined;
-    const ledger = await exchange.fetchLedger(code, since, limit, {
-      start: new Date(2023, 11, 1).getTime() / 1000,
-      end: new Date(2024, 1, 1).getTime() / 1000,
-      ofs: 50,
-    });
+    const ledger = await exchange.fetchLedger(
+      code,
+      since,
+      limit,
+      //   {
+      //   start: new Date(2023, 11, 1).getTime() / 1000,
+      //   end: new Date(2024, 1, 1).getTime() / 1000,
+      //   ofs: 50,
+      // }
+    );
 
     return { ledger };
   }
 
   async fetchKrakenOrders() {
-    const start = new Date(2024, 2, 1).getTime();
-    const end = new Date(2024, 2, 16).getTime();
-    const since = undefined;
+    const cryptoExchange: CryptoExchange = this.krakenExchange;
+    const exchange = cryptoExchange.exchange;
+    const start = new Date(2023, 10, 1).getTime();
+    const end = new Date(2023, 11, 31).getTime();
+    const since = new Date(2023, 5, 1);
+    // const since = undefined;
     console.log({
+      since,
+      sinceTs: since.getTime(),
       startDate: new Date(start).toISOString(),
       start: start / 1000,
       endDate: new Date(end).toISOString(),
@@ -247,14 +258,15 @@ export class PlaygroundService {
     const limit = undefined;
 
     // https://docs.kraken.com/rest/#tag/Account-Data/operation/getClosedOrders
-    const orders = await this.krakenExchange.exchange.fetchClosedOrders(
+    await cryptoExchange.loadMarkets();
+    const orders = await exchange.fetchClosedOrders(
       symbol,
-      since,
+      since.getTime(),
       limit,
       {
-        start: start / 1000,
-        end: end / 1000,
-        trades: true,
+        start: since.getTime() / 1000,
+        end: start / 1000,
+        // trades: true,
         // ofs: 49,
         // start: 'OI74LJ-5WDB3-ZFC7XT',
       },
@@ -273,7 +285,11 @@ export class PlaygroundService {
     return { order };
   }
 
-  async fetchΒitstampOrders() {
+  async fetchOrders(exchangeName: ExchangeNameEnum) {
+    const cryptoExchange: CryptoExchange =
+      this._getCryptoExchange(exchangeName);
+    const exchange = cryptoExchange.exchange;
+
     const start = new Date(2017, 1, 1).getTime() / 1000;
     const end = new Date(2021, 2, 1).getTime() / 1000;
     const since = undefined;
@@ -283,7 +299,7 @@ export class PlaygroundService {
       endDate: new Date(end).toISOString(),
       end,
     });
-    const symbol = undefined;
+    const symbol = 'BTC/USDT';
     const limit = 10;
     const offset = 1;
     // const orders = await this.bitstampExchange.privatePostUserTransactions({
@@ -291,14 +307,15 @@ export class PlaygroundService {
     //   offset,
     //   sort: 'asc',
     // });
-    const orders = await this.bitstampExchange.exchange.fetchMyTrades(
+
+    const orders = await exchange.fetchClosedOrders(
       symbol,
       start,
       limit,
-      {
-        limit,
-        sort: 'asc',
-      },
+      // {
+      //   limit,
+      //   sort: 'asc',
+      // },
     );
 
     return { orders };

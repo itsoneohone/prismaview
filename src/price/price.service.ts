@@ -3,7 +3,12 @@ import { ConfigService } from '@nestjs/config';
 import { ExchangeNameEnum } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { FiatCurrency, TickerSymbol } from 'src/lib/common/constants';
-import { createPair, isFiat } from 'src/lib/common/utils';
+import {
+  calculateStartTimestamp,
+  getFetchPriceLimits,
+  createPair,
+  isFiat,
+} from 'src/lib/common/utils';
 import { BinanceExchange } from 'src/lib/exchange/binance-exchange';
 import { BitstampExchange } from 'src/lib/exchange/bitstamp-exchange';
 import { GetExchangeDto } from 'src/lib/exchange/dto';
@@ -12,13 +17,18 @@ import { CryptoExchange } from 'src/lib/exchange/types';
 import { getTickerSymbols } from 'src/order/common/utils';
 import { CreatePriceDto } from 'src/price/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { uniq } from 'lodash';
+import { first, uniq } from 'lodash';
+import { sleep } from 'pactum';
+import { localsAsTemplateData } from 'hbs';
+import { FetchDirection } from 'src/price/common/constants';
+import { KrakenExchange } from 'src/lib/exchange/kraken-exchange';
 
 @Injectable()
 export class PriceService {
   private logger = new Logger(PriceService.name);
   private bitstampExchange;
   private binanceExchange;
+  private krakenExchange;
 
   constructor(
     private config: ConfigService,
@@ -45,12 +55,26 @@ export class PriceService {
     this.bitstampExchange = ExchangeFactory.create(
       bitstampDto,
     ) as BitstampExchange;
+
+    const krakenDto: GetExchangeDto = {
+      userId: 1,
+      accessKeyId: 1,
+      key: this.config.getOrThrow('KRAKEN_API_KEY'),
+      secret: this.config.getOrThrow('KRAKEN_SECRET'),
+      exchange: ExchangeNameEnum.KRAKEN,
+    };
+    this.krakenExchange = ExchangeFactory.create(krakenDto) as KrakenExchange;
+  }
+
+  private _getCryptoExchanges() {
+    return [this.binanceExchange, this.bitstampExchange, this.krakenExchange];
   }
 
   private _getCryptoExchange(exchangeName: ExchangeNameEnum) {
     const exchangeMapping = {
       [ExchangeNameEnum.BINANCE]: this.binanceExchange,
       [ExchangeNameEnum.BITSTAMP]: this.bitstampExchange,
+      [ExchangeNameEnum.KRAKEN]: this.krakenExchange,
     };
 
     return exchangeMapping[exchangeName];
@@ -570,34 +594,53 @@ export class PriceService {
   async fetchOhlcv(
     exchangeName: ExchangeNameEnum,
     market: string,
-    sinceDateString: string,
+    startDateString?: string,
     limit?: number,
   ) {
     // Check if the date is valid
-    let since = new Date(sinceDateString).getTime();
+    let since = new Date(startDateString).getTime();
     if (isNaN(since)) {
       since = undefined;
     }
 
-    console.log({
-      since,
-      sinceDt: since ? new Date(since).toISOString() : undefined,
-    });
     const cryptoExchange: CryptoExchange =
       this._getCryptoExchange(exchangeName);
     const exchange = cryptoExchange.exchange;
-    await exchange.loadMarkets();
+    await cryptoExchange.loadMarkets();
 
     if (!exchange.markets[market]) {
       throw new BadRequestException({
         field: 'market',
-        error: `${this.binanceExchange.name} does not support the '${market}' market.`,
+        error: `[${cryptoExchange.getName()}] The '${market}' market is not supported.`,
       });
     }
 
-    console.log({ market, sinceDateString, since, limit });
+    this.logger.log(
+      `[${cryptoExchange.getName()}] Fetching '${market}' prices since '${startDateString} (${since})'...`,
+    );
 
     const ohlcv = await exchange.fetchOHLCV(market, '1m', since, limit);
+
+    return ohlcv.map((item) => {
+      return [...item, new Date(item[0]).toISOString()];
+    });
+  }
+
+  async saveOhlcv(
+    exchangeName: ExchangeNameEnum,
+    market: string,
+    ohlcv: Array<any>,
+  ) {
+    const cryptoExchange: CryptoExchange =
+      this._getCryptoExchange(exchangeName);
+
+    if (!ohlcv.length) {
+      return {
+        count: { fetched: 0, saved: 0 },
+        firstSaved: undefined,
+        lastSaved: undefined,
+      };
+    }
 
     const { base, quote } = getTickerSymbols(market);
     const priceDtos: Array<CreatePriceDto> = ohlcv.map((item) => {
@@ -624,10 +667,120 @@ export class PriceService {
       skipDuplicates: true,
     });
 
-    return response;
+    return {
+      count: { fetched: priceDtos.length, saved: response.count },
+      lastSaved: priceDtos[priceDtos.length - 1],
+      firstSaved: priceDtos[0],
+    };
   }
 
-  async cmdFetchHistoricalPrices() {
+  async cmdFetchPrices(exchange?: ExchangeNameEnum, market?: string) {
     await this.findTickerSymbolToMarkets();
+  }
+
+  async cmdFetchPricesOfMarket(
+    market?: string,
+    exchangeName?: string,
+    startingDateString?: string,
+    limit?: number,
+    direction?: FetchDirection,
+    targetPages?: number,
+  ) {
+    let cryptoExchange: CryptoExchange;
+    let exchange;
+    let marketSupported = false;
+    // Find the exchange the supports the given market
+    const exchanges = this._getCryptoExchanges();
+    for (const ce of exchanges) {
+      // An exchange name is provided, skip the rest of the exchanges
+      if (exchangeName && exchangeName !== ce.getName()) {
+        continue;
+      }
+
+      cryptoExchange = ce;
+      exchange = ce.exchange;
+      await cryptoExchange.loadMarkets();
+
+      // This exchange supports the market
+      if (exchange.markets[market]) {
+        marketSupported = true;
+        break;
+      }
+    }
+
+    if (!marketSupported) {
+      throw new BadRequestException({
+        field: 'market',
+        error: `${cryptoExchange ? cryptoExchange.getName() : 'Not supported'} does not support the '${market}' market`,
+      });
+    }
+
+    this.logger.log(
+      `Picked ${cryptoExchange.getName()} to fetch historical prices for the '${market}' market`,
+    );
+
+    // If no valid date has been provided, set the starting date to now.
+    const startingDate = new Date(startingDateString);
+    let startTs = isNaN(startingDate.getTime())
+      ? new Date().getTime()
+      : startingDate.getTime();
+    let round = 0;
+    let start, end;
+    ({ start, end } = getFetchPriceLimits(
+      startTs,
+      cryptoExchange.fetchLimit,
+      direction,
+    ));
+
+    while (true) {
+      try {
+        round++;
+
+        const pagesLog = targetPages
+          ? `(${round}/${targetPages}) `
+          : `(${round}/?) `;
+        this.logger.log(
+          `${pagesLog}[${cryptoExchange.getName()}] Fetch '${market}' prices from '${new Date(start).toISOString()} (${start})' to '${new Date(end).toISOString()} (${end})'`,
+        );
+
+        const ohlcv = await this.fetchOhlcv(
+          cryptoExchange.getName(),
+          market,
+          new Date(start).toISOString(),
+          limit,
+        );
+
+        const { count, firstSaved, lastSaved } = await this.saveOhlcv(
+          cryptoExchange.getName(),
+          market,
+          ohlcv,
+        );
+
+        this.logger.log(`Saved '${count.saved}' '${market}' prices`);
+
+        // No more historical prices or the target number of pages is reached.
+        if (count.fetched === 0 || (targetPages && round === targetPages)) {
+          break;
+        }
+
+        const nextStartingDate =
+          direction === FetchDirection.DESC
+            ? firstSaved.datetime
+            : lastSaved.datetime;
+        ({ start, end } = getFetchPriceLimits(
+          nextStartingDate,
+          cryptoExchange.fetchLimit,
+          direction,
+        ));
+
+        this.logger.log(
+          `Will sleep for ${cryptoExchange.rateLimit / 1000} secs...`,
+        );
+        await sleep(cryptoExchange.rateLimit);
+      } catch (error) {
+        this.logger.error(error);
+        break;
+      }
+    }
   }
 }

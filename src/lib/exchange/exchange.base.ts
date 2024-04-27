@@ -2,6 +2,7 @@ import { Logger } from '@nestjs/common';
 import { ExchangeNameEnum } from '@prisma/client';
 import { Observable } from 'rxjs';
 import { GetExchangeDto } from 'src/lib/exchange/dto';
+import { FetchDirection } from 'src/price/common/constants';
 
 export enum SyncMode {
   ALL = 'ALL',
@@ -15,11 +16,13 @@ export class BaseExchange {
   // Limit the requests to the exchange - e.g. If set to 2000ms, it will allow one request every 2 secs.
   protected accessKeyId: number;
   // Read more on rateLimit here: https://github.com/ccxt/ccxt/wiki/Manual#rate-limit
-  protected rateLimit = 2000;
-  public exchange;
-  readonly userId: number;
-  readonly apiKey: string;
-  readonly apiSecret: string;
+  public readonly rateLimit: number = 2000;
+  public readonly exchange;
+  public readonly fetchLimit: number = 500;
+  public readonly fetchDirection: FetchDirection = FetchDirection.ASC;
+  protected readonly userId: number;
+  protected readonly apiKey: string;
+  protected readonly apiSecret: string;
 
   constructor(exchangeDto: GetExchangeDto) {
     const { userId, accessKeyId, key, secret } = exchangeDto;
@@ -31,6 +34,21 @@ export class BaseExchange {
 
   getName() {
     return this.name;
+  }
+
+  async loadMarkets() {
+    if (this.exchange.markets?.length) {
+      return this.exchange.markets;
+    }
+    try {
+      const markets = await this.exchange.loadMarkets();
+      return markets;
+    } catch (error) {
+      return {
+        exception: error.name,
+        description: error.toString(),
+      };
+    }
   }
 
   supports(lookFor?: string) {

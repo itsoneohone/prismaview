@@ -4,14 +4,20 @@ import { kraken } from 'ccxt';
 import { EMPTY, catchError, delay, expand, from, reduce, tap } from 'rxjs';
 import { GetExchangeDto } from 'src/lib/exchange/dto';
 import { BaseExchange } from 'src/lib/exchange/exchange.base';
+import { FetchDirection } from 'src/price/common/constants';
 
 export class KrakenExchange extends BaseExchange {
-  public declare exchange: kraken;
+  public declare readonly exchange: kraken;
+  public declare readonly rateLimit: number;
+  public declare readonly fetchLimit: number;
+  public declare readonly fetchDirection: FetchDirection;
   constructor(exchangeDto: GetExchangeDto) {
     super(exchangeDto);
     this.name = ExchangeNameEnum.KRAKEN;
     // Respect the exchange's rate limits (https://docs.kraken.com/rest/#section/Rate-Limits)
     this.rateLimit = 3000;
+    this.fetchLimit = 720;
+    this.fetchDirection = FetchDirection.DESC;
     this.exchange = new kraken({
       apiKey: this.apiKey,
       secret: this.apiSecret,
@@ -21,7 +27,7 @@ export class KrakenExchange extends BaseExchange {
     });
 
     // Enable debug mode to see the HTTP requests and responses in details
-    // this.exchange.verbose = true;
+    this.exchange.verbose = true;
   }
 
   /**
@@ -36,6 +42,7 @@ export class KrakenExchange extends BaseExchange {
       if (['AuthenticationError', 'PermissionDenied'].includes(err.name)) {
         return false;
       }
+
       throw new ForbiddenException(err);
     }
   }
