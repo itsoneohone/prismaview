@@ -27,7 +27,7 @@ export class KrakenExchange extends BaseExchange {
     });
 
     // Enable debug mode to see the HTTP requests and responses in details
-    this.exchange.verbose = true;
+    // this.exchange.verbose = true;
   }
 
   /**

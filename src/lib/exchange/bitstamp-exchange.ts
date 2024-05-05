@@ -15,7 +15,7 @@ export class BitstampExchange extends BaseExchange {
     this.name = ExchangeNameEnum.BITSTAMP;
     // Bitstamp rate limits: https://www.bitstamp.net/api/#section/Request-limits
     // 400 requests per second, capped at 10,000 requests every 10 mins
-    this.rateLimit = 1000;
+    this.rateLimit = 1500;
     this.fetchLimit = 1000;
     this.fetchDirection = FetchDirection.ASC;
     this.exchange = new bitstamp({

@@ -361,11 +361,9 @@ export class PlaygroundService {
     sinceDateString: string,
     limit?: number,
   ) {
-    return this.priceService.fetchOhlcv(
-      exchangeName,
-      market,
-      sinceDateString,
+    return this.priceService.fetchOhlcv(exchangeName, market, {
+      startDateString: sinceDateString,
       limit,
-    );
+    });
   }
 }

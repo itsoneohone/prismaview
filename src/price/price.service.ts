@@ -17,11 +17,11 @@ import { CryptoExchange } from 'src/lib/exchange/types';
 import { getTickerSymbols } from 'src/order/common/utils';
 import { CreatePriceDto } from 'src/price/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { first, uniq } from 'lodash';
+import { uniq } from 'lodash';
 import { sleep } from 'pactum';
-import { localsAsTemplateData } from 'hbs';
 import { FetchDirection } from 'src/price/common/constants';
 import { KrakenExchange } from 'src/lib/exchange/kraken-exchange';
+import { getLogTraceID, logWithTraceID } from 'src/common/utils';
 
 @Injectable()
 export class PriceService {
@@ -163,7 +163,7 @@ export class PriceService {
    * @param bitstampMarkets
    * @param param3
    */
-  _findQuoteToBtcMarket(tickerSymbol: string) {
+  private _findQuoteToBtcMarket(tickerSymbol: string) {
     const binanceMarkets = this.binanceExchange.exchange.markets;
     const bitstampMarkets = this.bitstampExchange.exchange.markets;
     // Get the BTC market for the given ticker symbol
@@ -591,12 +591,27 @@ export class PriceService {
     });
   }
 
+  /**
+   * Fetch historical prices (OHLCV) from an exchange for a given market.
+   *
+   * Start fetch prices from a given date or the current date will be used by default.
+   *
+   * @param exchangeName The name of the exchange to fetch OHLCV data from
+   * @param market The target market (e.g. BTC/USD)
+   * @param params
+   * @returns
+   */
   async fetchOhlcv(
     exchangeName: ExchangeNameEnum,
     market: string,
-    startDateString?: string,
-    limit?: number,
+    params?: {
+      startDateString?: string;
+      limit?: number;
+      logTraceID?: string;
+    },
   ) {
+    const { startDateString, limit, logTraceID } = params;
+
     // Check if the date is valid
     let since = new Date(startDateString).getTime();
     if (isNaN(since)) {
@@ -611,12 +626,18 @@ export class PriceService {
     if (!exchange.markets[market]) {
       throw new BadRequestException({
         field: 'market',
-        error: `[${cryptoExchange.getName()}] The '${market}' market is not supported.`,
+        error: logWithTraceID(
+          `[${cryptoExchange.getName()}] The '${market}' market is not supported.`,
+          logTraceID,
+        ),
       });
     }
 
     this.logger.log(
-      `[${cryptoExchange.getName()}] Fetching '${market}' prices since '${startDateString} (${since})'...`,
+      logWithTraceID(
+        `[${cryptoExchange.getName()}] Fetching '${market}' prices since '${startDateString} (${since})'...`,
+        logTraceID,
+      ),
     );
 
     const ohlcv = await exchange.fetchOHLCV(market, '1m', since, limit);
@@ -626,6 +647,14 @@ export class PriceService {
     });
   }
 
+  /**
+   * Save OHLCV data in the price DB table.
+   *
+   * @param exchangeName
+   * @param market
+   * @param ohlcv
+   * @returns
+   */
   async saveOhlcv(
     exchangeName: ExchangeNameEnum,
     market: string,
@@ -674,18 +703,18 @@ export class PriceService {
     };
   }
 
-  async cmdFetchPrices(exchange?: ExchangeNameEnum, market?: string) {
-    await this.findTickerSymbolToMarkets();
-  }
-
-  async cmdFetchPricesOfMarket(
-    market?: string,
+  /**
+   * Find the exchange that supports a given market or check if the given
+   * exchange supports a given market.
+   *
+   * @param market
+   * @param exchangeName
+   * @returns
+   */
+  private async _findExchangeForMarket(
+    market: string,
     exchangeName?: string,
-    startingDateString?: string,
-    limit?: number,
-    direction?: FetchDirection,
-    targetPages?: number,
-  ) {
+  ): Promise<CryptoExchange | never> {
     let cryptoExchange: CryptoExchange;
     let exchange;
     let marketSupported = false;
@@ -715,17 +744,45 @@ export class PriceService {
       });
     }
 
-    this.logger.log(
-      `Picked ${cryptoExchange.getName()} to fetch historical prices for the '${market}' market`,
-    );
+    return cryptoExchange;
+  }
+
+  /**
+   * fetch OHLCV data from a crypto exchange in a loop and save them.
+   *
+   * It accepts the starting date for fetching ohlcv data and stops fetching data
+   * when there is no more data to be fetched or certain conditions are met
+   * (e.g. the function accepts an optional param named `targetPages` which dictates
+   * the number of pages of data to request from an exchange).
+   *
+   * @param cryptoExchange
+   * @param market
+   * @param params
+   * @returns
+   */
+  private async _fetchfetchAndSaveOhlcvData(
+    cryptoExchange: CryptoExchange,
+    market: string,
+    params?: {
+      direction?: FetchDirection;
+      limit?: number;
+      logTraceID?: string;
+      startingDateString?: string;
+      targetPages?: number;
+    },
+  ) {
+    const { direction, limit, logTraceID, startingDateString, targetPages } =
+      params;
+    let round = 0;
+    let start, end;
+    let totalFetched = 0;
+    let totalSaved = 0;
 
     // If no valid date has been provided, set the starting date to now.
     const startingDate = new Date(startingDateString);
     let startTs = isNaN(startingDate.getTime())
       ? new Date().getTime()
       : startingDate.getTime();
-    let round = 0;
-    let start, end;
     ({ start, end } = getFetchPriceLimits(
       startTs,
       cryptoExchange.fetchLimit,
@@ -739,27 +796,37 @@ export class PriceService {
         const pagesLog = targetPages
           ? `(${round}/${targetPages}) `
           : `(${round}/?) `;
-        this.logger.log(
-          `${pagesLog}[${cryptoExchange.getName()}] Fetch '${market}' prices from '${new Date(start).toISOString()} (${start})' to '${new Date(end).toISOString()} (${end})'`,
-        );
+        const logMsg = `${pagesLog}[${cryptoExchange.getName()}] Fetch '${market}' prices from '${new Date(start).toISOString()} (${start})' to '${new Date(end).toISOString()} (${end})'`;
+        this.logger.log(logWithTraceID(logMsg, logTraceID));
 
-        const ohlcv = await this.fetchOhlcv(
-          cryptoExchange.getName(),
-          market,
-          new Date(start).toISOString(),
+        const ohlcv = await this.fetchOhlcv(cryptoExchange.getName(), market, {
+          startDateString: new Date(start).toISOString(),
           limit,
-        );
+          logTraceID,
+        });
 
         const { count, firstSaved, lastSaved } = await this.saveOhlcv(
           cryptoExchange.getName(),
           market,
           ohlcv,
         );
+        totalFetched += count.fetched;
+        totalSaved += count.saved;
 
-        this.logger.log(`Saved '${count.saved}' '${market}' prices`);
+        this.logger.log(
+          logWithTraceID(
+            `Saved '${count.saved}' out of '${count.fetched}' '${market}' prices`,
+            logTraceID,
+          ),
+        );
 
-        // No more historical prices or the target number of pages is reached.
-        if (count.fetched === 0 || (targetPages && round === targetPages)) {
+        // No more historical prices (* Skip the most recent price data point in the case of ASC direction)
+        // or the target number of pages is reached.
+        if (
+          count.fetched === 0 ||
+          (direction === FetchDirection.ASC && count.fetched <= 1) ||
+          (targetPages && round === targetPages)
+        ) {
           break;
         }
 
@@ -774,7 +841,10 @@ export class PriceService {
         ));
 
         this.logger.log(
-          `Will sleep for ${cryptoExchange.rateLimit / 1000} secs...`,
+          logWithTraceID(
+            `Will sleep for ${cryptoExchange.rateLimit / 1000} secs...`,
+            logTraceID,
+          ),
         );
         await sleep(cryptoExchange.rateLimit);
       } catch (error) {
@@ -782,5 +852,57 @@ export class PriceService {
         break;
       }
     }
+
+    return {
+      totalFetched,
+      totalSaved,
+    };
+  }
+
+  /**
+   * Fetch and save prices of a given market.
+   *
+   * @param market
+   * @param exchangeName
+   * @param startingDateString
+   * @param limit
+   * @param direction
+   * @param targetPages
+   */
+  async cmdFetchPricesOfMarket(
+    market?: string,
+    exchangeName?: string,
+    startingDateString?: string,
+    limit?: number,
+    direction?: FetchDirection,
+    targetPages?: number,
+  ) {
+    let cryptoExchange: CryptoExchange = await this._findExchangeForMarket(
+      market,
+      exchangeName,
+    );
+
+    const logTraceID = getLogTraceID([cryptoExchange.getName(), market]);
+    let logMsg = `Picked ${cryptoExchange.getName()} to fetch historical prices for the '${market}' market (Direction: ${direction})`;
+    this.logger.log(logWithTraceID(logMsg, logTraceID));
+
+    const { totalFetched, totalSaved } = await this._fetchfetchAndSaveOhlcvData(
+      cryptoExchange,
+      market,
+      {
+        direction,
+        limit,
+        logTraceID,
+        startingDateString,
+        targetPages,
+      },
+    );
+
+    logMsg = `Fetched historical prices from '${cryptoExchange.getName()}' for the '${market}' market (Fetched: ${totalFetched}, Saved: ${totalSaved})`;
+    this.logger.log(logWithTraceID(logMsg, logTraceID));
+  }
+
+  async cmdFetchPrices(exchange?: ExchangeNameEnum, market?: string) {
+    await this.findTickerSymbolToMarkets();
   }
 }

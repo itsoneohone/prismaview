@@ -79,6 +79,7 @@ export class PriceCommand {
     } else {
       directionEnum = FetchDirection[direction];
     }
+
     await this.priceService.cmdFetchPricesOfMarket(
       market,
       exchange,
