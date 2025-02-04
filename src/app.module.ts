@@ -1,8 +1,5 @@
 import { Module, ModuleMetadata } from '@nestjs/common';
 import { CacheModule } from '@nestjs/cache-manager';
-// import * as redisStore from 'cache-manager-redis-store';
-import { redisStore } from 'cache-manager-redis-yet';
-import { RedisClientOptions } from 'redis';
 import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { UserModule } from './user/user.module';
@@ -19,9 +16,12 @@ import { HttpModule } from '@nestjs/axios';
 import { AccessKeyModule } from './access-key/access-key.module';
 import { PlaygroundModule } from './playground/playground.module';
 import { PriceModule } from './price/price.module';
-import { CommandModule } from 'nestjs-command';
-import { PriceCommand } from 'src/price/price.command';
+// import { CommandModule } from 'nestjs-command';
+// import { PriceCommand } from 'src/price/price.command';
 import { PriceService } from 'src/price/price.service';
+import { createKeyv } from '@keyv/redis';
+// import { Keyv } from '@keyv/redis';
+// import { CacheableMemory } from 'cacheable';
 
 export const appMetadata: ModuleMetadata = {
   imports: [
@@ -38,15 +38,18 @@ export const appMetadata: ModuleMetadata = {
     //   isGlobal: true,
     //   ttl: 6000,
     // }),
-    CacheModule.registerAsync<RedisClientOptions>({
+    CacheModule.registerAsync({
       isGlobal: true,
       inject: [ConfigService],
       useFactory: async (config: ConfigService) => {
         return {
-          store: await redisStore({
-            url: config.getOrThrow('REDIS_URL'),
-            ttl: 8000,
-          }),
+          ttl: config.get('CACHE_TTL') || 8000,
+          stores: [
+            // new Keyv({
+            //   store: new CacheableMemory({ ttl: 60000, lruSize: 5000 }),
+            // }),
+            createKeyv(config.getOrThrow('REDIS_URL')),
+          ],
         };
       },
     }),
@@ -55,7 +58,7 @@ export const appMetadata: ModuleMetadata = {
     EventsModule,
     AccessKeyModule,
     PriceModule,
-    CommandModule,
+    // CommandModule,
   ],
   controllers: [AppController],
   providers: [
@@ -72,7 +75,7 @@ export const appMetadata: ModuleMetadata = {
     //   useClass: AdminGuard,
     // },
     OrderService,
-    PriceCommand,
+    // PriceCommand,
     PriceService,
   ],
 };

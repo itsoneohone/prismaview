@@ -1,7 +1,7 @@
 import { join } from 'path';
 import * as session from 'express-session';
 import { createClient } from 'redis';
-import RedisStore from 'connect-redis';
+import { RedisStore } from 'connect-redis';
 import {
   BadRequestException,
   INestApplication,

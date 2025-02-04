@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Command, Option, Positional } from 'nestjs-command';
+// import { Command, Option, Positional } from 'nestjs-command';
 import { FetchDirection } from 'src/price/common/constants';
 import { PriceService } from 'src/price/price.service';
 
-@Injectable()
+/* @Injectable()
 export class PriceCommand {
   private readonly logger = new Logger('PriceCommand');
   constructor(private priceService: PriceService) {}
@@ -95,3 +95,4 @@ export class PriceCommand {
     );
   }
 }
+ */
