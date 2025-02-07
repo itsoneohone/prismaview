@@ -37,7 +37,8 @@ export class AuthService {
       throw new ForbiddenException('Credentials incorrect');
     }
 
-    // Hash the password
+    // Hash the password - the generated hash includes all the necessary information
+    // (algorithm, parameters, salt, and the hashed password) in a single string.
     const hashedPassword = await argon.hash(dto.password);
 
     // Store the user in the DB
@@ -128,6 +129,7 @@ export class AuthService {
       return this.signJwtToken(user.id, user.email, user.role);
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
+        // Unique constraint violation - The provided email is reserved by another user
         if (error.code === 'P2002') {
           throw new ForbiddenException('Credentials taken');
         }

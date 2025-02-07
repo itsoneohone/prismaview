@@ -42,31 +42,14 @@ export class JwtGuard extends AuthGuard('jwt') implements CanActivate {
         const request = context.switchToHttp().getRequest() as Request;
         const user = request.user as User;
 
+        // If this is an admin route and the user doesn't have an ADMIN role, do not grant access
         if (isAdminRoute && user.role !== 'ADMIN') {
           throw new UnauthorizedException('Reserved for admins.');
         }
 
+        // The
         return true;
       }),
     );
-    // Allow access only to authenticated users
-    // const request = context.switchToHttp().getRequest() as Request;
-    // const user = request.user as User;
-
-    // if (!user) {
-    //   throw new UnauthorizedException('Reserved for authenticated users.');
-    // }
-
-    // // Allow access only to admins
-    // const isAdminRoute = this.reflector.getAllAndOverride<string>(
-    //   'ADMIN_ONLY',
-    //   [context.getHandler(), context.getClass()],
-    // );
-
-    // if (isAdminRoute && user.role !== 'ADMIN') {
-    //   throw new UnauthorizedException('Reserved for admins.');
-    // }
-
-    // return super.canActivate(context);
   }
 }

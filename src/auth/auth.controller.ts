@@ -34,33 +34,34 @@ export class AuthController {
     };
   }
 
-  // @Post('signup')
-  // async signup(@Body() dto: AuthDto, @Session() session: UserSession) {
-  //   const { id, email, role } = await this.authService.signup(dto);
-  //   return this.serializeSession(id, email, role, session);
-  // }
+  // Not used
+  @Post('signup-sess')
+  async signupSession(@Body() dto: AuthDto, @Session() session: UserSession) {
+    const { id, email, role } = await this.authService.signup(dto);
+    return this.serializeSession(id, email, role, session);
+  }
 
-  // @HttpCode(HttpStatus.OK)
-  // @Post('signin')
-  // async signin(@Body() dto: AuthDto, @Session() session: UserSession) {
-  //   const { id, email, role } = await this.authService.signin(dto);
-  //   return this.serializeSession(id, email, role, session);
-  // }
+  // Not used
+  @HttpCode(HttpStatus.OK)
+  @Post('signin-session')
+  async signinSession(@Body() dto: AuthDto, @Session() session: UserSession) {
+    const { id, email, role } = await this.authService.signin(dto);
+    return this.serializeSession(id, email, role, session);
+  }
 
-  // @Get('signin')
-  // signinForm(@Res() res: Response) {
-  //   return res.render('auth/signin', {
-  //     // layout: 'layouts/index',
-  //     message: 'Sign in form',
-  //   });
-  // }
+  @Get('signin')
+  signinForm(@Res() res: Response) {
+    return res.render('auth/signin', {
+      // layout: 'layouts/index',
+      message: 'Sign in form',
+    });
+  }
 
   @Post('signup')
   async signup(@Body() dto: AuthDto) {
     return this.authService.jwtSignup(dto);
   }
 
-  @HttpCode(HttpStatus.OK)
   @Post('signin')
   async signin(@Body() dto: AuthDto) {
     return this.authService.jwtSignin(dto);
