@@ -21,7 +21,7 @@ import { uniq } from 'lodash';
 import { sleep } from 'pactum';
 import { FetchDirection } from 'src/price/common/constants';
 import { KrakenExchange } from 'src/lib/exchange/kraken-exchange';
-import { getLogTraceID, logWithTraceID } from 'src/common/utils';
+import { getLogTraceID, logWithTraceID, parseDate } from 'src/common/utils';
 
 @Injectable()
 export class PriceService {
@@ -740,7 +740,11 @@ export class PriceService {
     if (!marketSupported) {
       throw new BadRequestException({
         field: 'market',
-        error: `${cryptoExchange ? cryptoExchange.getName() : 'Not supported'} does not support the '${market}' market`,
+        error: `${
+          cryptoExchange
+            ? `${cryptoExchange.getName()} does not support the '${market}' market.`
+            : `Exchange '${exchangeName}' is not supported`
+        } `,
       });
     }
 
@@ -773,21 +777,16 @@ export class PriceService {
   ) {
     const { direction, limit, logTraceID, startingDateString, targetPages } =
       params;
+    const fetchLimit = limit || cryptoExchange.fetchLimit;
     let round = 0;
     let start, end;
     let totalFetched = 0;
     let totalSaved = 0;
 
     // If no valid date has been provided, set the starting date to now.
-    const startingDate = new Date(startingDateString);
-    let startTs = isNaN(startingDate.getTime())
-      ? new Date().getTime()
-      : startingDate.getTime();
-    ({ start, end } = getFetchPriceLimits(
-      startTs,
-      cryptoExchange.fetchLimit,
-      direction,
-    ));
+    const startingDate = parseDate(startingDateString);
+    let startTs = startingDate ? startingDate.getTime() : new Date().getTime();
+    ({ start, end } = getFetchPriceLimits(startTs, fetchLimit, direction));
 
     while (true) {
       try {
@@ -796,12 +795,15 @@ export class PriceService {
         const pagesLog = targetPages
           ? `(${round}/${targetPages}) `
           : `(${round}/?) `;
-        const logMsg = `${pagesLog}[${cryptoExchange.getName()}] Fetch '${market}' prices from '${new Date(start).toISOString()} (${start})' to '${new Date(end).toISOString()} (${end})'`;
+        const logMsg =
+          direction === FetchDirection.ASC
+            ? `${pagesLog}[${cryptoExchange.getName()}] Fetch '${market}' prices from '${new Date(start).toISOString()} (${start})' to '${new Date(end).toISOString()} (${end})'`
+            : `${pagesLog}[${cryptoExchange.getName()}] Fetch '${market}' prices from '${new Date(end).toISOString()} (${end})' to '${new Date(start).toISOString()} (${start})'`;
         this.logger.log(logWithTraceID(logMsg, logTraceID));
 
         const ohlcv = await this.fetchOhlcv(cryptoExchange.getName(), market, {
           startDateString: new Date(start).toISOString(),
-          limit,
+          limit: fetchLimit,
           logTraceID,
         });
 
@@ -830,13 +832,18 @@ export class PriceService {
           break;
         }
 
-        const nextStartingDate =
-          direction === FetchDirection.DESC
-            ? firstSaved.datetime
-            : lastSaved.datetime;
+        let nextStartingDate;
+        if (direction === FetchDirection.DESC) {
+          nextStartingDate = new Date(firstSaved.datetime);
+          nextStartingDate.setMinutes(nextStartingDate.getMinutes() - 1);
+        } else {
+          nextStartingDate = new Date(lastSaved.datetime);
+          nextStartingDate.setMinutes(nextStartingDate.getMinutes() + 1);
+        }
+
         ({ start, end } = getFetchPriceLimits(
           nextStartingDate,
-          cryptoExchange.fetchLimit,
+          fetchLimit,
           direction,
         ));
 

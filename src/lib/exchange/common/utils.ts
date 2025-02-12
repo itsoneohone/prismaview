@@ -19,3 +19,13 @@ export function getCryptoExchange(accessKey: AccessKey): CryptoExchange {
   };
   return ExchangeFactory.create(dto);
 }
+
+/**
+ * Use an exchange name to check if it's supported.
+ *
+ * @param exchangeName
+ * @returns
+ */
+export function isSupportedExchange(exchangeName: string): boolean {
+  return Object.keys(ExchangeNameEnum).indexOf(exchangeName) > -1;
+}

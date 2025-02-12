@@ -16,8 +16,10 @@ import { HttpModule } from '@nestjs/axios';
 import { AccessKeyModule } from './access-key/access-key.module';
 import { PlaygroundModule } from './playground/playground.module';
 import { PriceModule } from './price/price.module';
-// import { CommandModule } from 'nestjs-command';
-// import { PriceCommand } from 'src/price/price.command';
+import { PriceCommand } from 'src/price/price.command';
+import { ExchangeQuestions } from 'src/price/price.inquirer.exchange';
+import { TaskQuestions } from 'src/price/price.inquirer.task';
+import { StartDateQuestions } from 'src/price/dto/price.inquirer.start';
 import { PriceService } from 'src/price/price.service';
 import { createKeyv } from '@keyv/redis';
 // import { Keyv } from '@keyv/redis';
@@ -58,7 +60,6 @@ export const appMetadata: ModuleMetadata = {
     EventsModule,
     AccessKeyModule,
     PriceModule,
-    // CommandModule,
   ],
   controllers: [AppController],
   providers: [
@@ -75,7 +76,10 @@ export const appMetadata: ModuleMetadata = {
     //   useClass: AdminGuard,
     // },
     OrderService,
-    // PriceCommand,
+    PriceCommand,
+    ExchangeQuestions,
+    TaskQuestions,
+    StartDateQuestions,
     PriceService,
   ],
 };
