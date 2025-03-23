@@ -10,25 +10,6 @@ export function createPair(base, quote): string {
 }
 
 /**
- * Calculate the start timestamp given an endDate and a timeframe in mins
- *
- * @param endTimestamp Unix timestamp in milliseconds
- */
-export function calculateStartTimestamp(
-  endDate: number | Date | string,
-  timeframeInMins: number,
-) {
-  const validatedEndDate = new Date(endDate);
-  const endTimestamp = validatedEndDate.getTime();
-
-  if (isNaN(endTimestamp) || endTimestamp < 0) {
-    throw new Error(`Invalid endDate '${endDate}'`);
-  }
-
-  return endTimestamp - (timeframeInMins - 1) * 60 * 1000;
-}
-
-/**
  * Given a starting date, calculate the 'start' and 'end' params that will be used
  * to fetch historical prices.
  *

@@ -3,12 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { ExchangeNameEnum } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { FiatCurrency, TickerSymbol } from 'src/lib/common/constants';
-import {
-  calculateStartTimestamp,
-  getFetchPriceLimits,
-  createPair,
-  isFiat,
-} from 'src/lib/common/utils';
+import { getFetchPriceLimits, createPair, isFiat } from 'src/lib/common/utils';
 import { BinanceExchange } from 'src/lib/exchange/binance-exchange';
 import { BitstampExchange } from 'src/lib/exchange/bitstamp-exchange';
 import { GetExchangeDto } from 'src/lib/exchange/dto';

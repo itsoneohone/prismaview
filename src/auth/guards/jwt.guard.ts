@@ -47,7 +47,7 @@ export class JwtGuard extends AuthGuard('jwt') implements CanActivate {
           throw new UnauthorizedException('Reserved for admins.');
         }
 
-        // The
+        // Grant access to an authenticated user or admin
         return true;
       }),
     );
