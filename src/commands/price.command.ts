@@ -10,9 +10,9 @@ import { parseDate } from 'src/common/utils';
 import { isSupportedExchange } from 'src/lib/exchange/common/utils';
 
 import { FetchDirection } from 'src/price/common/constants';
-import { QUESTIONS_START } from 'src/price/dto/price.inquirer.start';
-import { QUESTIONS_EXCHANGE } from 'src/price/price.inquirer.exchange';
-import { QUESTIONS_TASK } from 'src/price/price.inquirer.task';
+import { QUESTIONS_START } from 'src/commands/inquirer/price.inquirer.start';
+import { QUESTIONS_EXCHANGE } from 'src/commands/inquirer/price.inquirer.exchange';
+import { QUESTIONS_TASK } from 'src/commands/inquirer/price.inquirer.task';
 import { PriceService } from 'src/price/price.service';
 
 @Command({
