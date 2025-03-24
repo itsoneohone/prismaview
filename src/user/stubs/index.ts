@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker/locale/af_ZA';
 import { RoleEnum } from '@prisma/client';
-import { getRandomAmount } from 'src/common/amounts';
+import { getRandomAmount } from 'src/shared/utils/amounts';
 import { FiatCurrency } from 'src/lib/common/constants';
 import { UserSettingName } from 'src/user/common/constants';
 import { CreateUserDto } from 'src/user/dto';

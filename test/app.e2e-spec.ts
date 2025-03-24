@@ -12,7 +12,7 @@ import { appMetadata } from 'src/app.module';
 import { APP_PORT, setupPipes } from 'src/app-config/app-config';
 import { CreateAccessKeyDtoStub } from 'src/access-key/stubs';
 import { CreateOrderDtoStub, OrderStub } from 'src/order/stubs';
-import { getRandomAmount } from 'src/common/amounts';
+import { getRandomAmount } from 'src/shared/utils/amounts';
 import { AccessKeyService } from 'src/access-key/access-key.service';
 import {
   calculateOrderAmounts,

@@ -6,7 +6,7 @@ import {
   InquirerService,
   Option,
 } from 'nest-commander';
-import { parseDate } from 'src/common/utils';
+import { parseDate } from 'src/shared/utils/common';
 import { isSupportedExchange } from 'src/lib/exchange/common/utils';
 
 import { FetchDirection } from 'src/price/common/constants';

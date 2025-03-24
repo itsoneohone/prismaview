@@ -1,4 +1,4 @@
-import { PaginateDto, PaginateResultDto } from 'src/common/dto';
+import { PaginateDto, PaginateResultDto } from 'src/shared/dto';
 
 export const SEARCH_LIMIT = 20;
 

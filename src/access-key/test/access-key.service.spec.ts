@@ -6,13 +6,13 @@ import {
   accessKeyStubStatic,
   createAccessKeyDtoStubStatic,
 } from 'src/access-key/stubs';
-import { PaginateDto, PaginateResultDto } from 'src/common/dto';
+import { PaginateDto, PaginateResultDto } from 'src/shared/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { userStubStatic } from 'src/user/stubs';
 import {
   SEARCH_LIMIT,
   preparePaginateResultDto,
-} from 'src/common/search-utils';
+} from 'src/shared/utils/search';
 
 jest.mock('../../prisma/prisma.service.ts');
 

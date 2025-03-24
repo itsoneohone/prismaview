@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { DECIMAL_ROUNDING, Decimal } from 'src/common/amounts';
+import { DECIMAL_ROUNDING, Decimal } from 'src/shared/utils/amounts';
 
 /**
  * Extract the base and the quote currency out of the symbol set by the CCXT library.

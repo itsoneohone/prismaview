@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { DECIMAL_ROUNDING, getRandomAmount } from 'src/common/amounts';
+import { DECIMAL_ROUNDING, getRandomAmount } from 'src/shared/utils/amounts';
 
 describe('getRandomAmount()', () => {
   it('should return a random number rounded to 8 decimal places', () => {

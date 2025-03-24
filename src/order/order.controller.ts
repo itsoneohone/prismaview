@@ -16,7 +16,7 @@ import { AccessKey } from '@prisma/client';
 import { GetAccessKeyFromReq } from 'src/access-key/decorators';
 import { AccessKeyOwnerGuard } from 'src/access-key/guards';
 import { GetUserFromJwt } from 'src/auth/decorators';
-import { PaginateDto } from 'src/common/dto';
+import { PaginateDto } from 'src/shared/dto';
 import { SyncMode } from 'src/lib/exchange/exchange.base';
 import { CreateOrderDto, UpdateOrderDto } from 'src/order/dto';
 import { OrderService } from 'src/order/order.service';

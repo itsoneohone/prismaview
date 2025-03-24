@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { version as ccxtVersion } from 'ccxt';
 import { ConfigService } from '@nestjs/config';
-import { sleep } from 'src/common/utils';
+import { sleep } from 'src/shared/utils/common';
 import { EMPTY, catchError, delay, expand, reduce, tap } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { AxiosError } from 'axios';
@@ -12,7 +12,7 @@ import { GetExchangeDto } from 'src/lib/exchange/dto';
 import { KrakenExchange } from 'src/lib/exchange/kraken-exchange';
 import { BitstampExchange } from 'src/lib/exchange/bitstamp-exchange';
 import { CryptoExchange } from 'src/lib/exchange/types';
-import { searchHasMoreData } from 'src/common/search-utils';
+import { searchHasMoreData } from 'src/shared/utils/search';
 import { BinanceExchange } from 'src/lib/exchange/binance-exchange';
 import { PriceService } from 'src/price/price.service';
 

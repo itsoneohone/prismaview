@@ -6,7 +6,7 @@ import {
   OrderTypeEnum,
 } from '@prisma/client';
 import { CreateOrderDto, UpdateOrderDto } from 'src/order/dto';
-import { DECIMAL_ROUNDING, getRandomAmount } from 'src/common/amounts';
+import { DECIMAL_ROUNDING, getRandomAmount } from 'src/shared/utils/amounts';
 import { userStubStatic } from 'src/user/stubs';
 import {
   getTickerSymbols,

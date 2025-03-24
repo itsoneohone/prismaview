@@ -1,4 +1,4 @@
-import { DECIMAL_ROUNDING, Decimal } from 'src/common/amounts';
+import { DECIMAL_ROUNDING, Decimal } from 'src/shared/utils/amounts';
 import {
   getTickerSymbols,
   calculateOrderAmounts,

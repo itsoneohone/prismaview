@@ -5,13 +5,13 @@ import {
 } from '@nestjs/common';
 import { AccessKey, ExchangeNameEnum } from '@prisma/client';
 import { CreateAccessKeyDto } from 'src/access-key/dto';
-import { PaginateDto, PaginateResultDto } from 'src/common/dto';
+import { PaginateDto, PaginateResultDto } from 'src/shared/dto';
 import { GetExchangeDto } from 'src/lib/exchange/dto';
 import { ExchangeFactory } from 'src/lib/exchange/exchange.factory';
 import {
   preparePaginateResultDto,
   SEARCH_LIMIT,
-} from 'src/common/search-utils';
+} from 'src/shared/utils/search';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()

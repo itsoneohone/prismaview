@@ -2,12 +2,12 @@ import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import { after, before } from 'node:test';
-import { DECIMAL_ROUNDING, getRandomAmount } from 'src/common/amounts';
-import { PaginateDto, PaginateResultDto } from 'src/common/dto';
+import { DECIMAL_ROUNDING, getRandomAmount } from 'src/shared/utils/amounts';
+import { PaginateDto, PaginateResultDto } from 'src/shared/dto';
 import {
   SEARCH_LIMIT,
   preparePaginateResultDto,
-} from 'src/common/search-utils';
+} from 'src/shared/utils/search';
 import { CreateOrderDto, UpdateOrderDto } from 'src/order/dto';
 import { OrderService } from 'src/order/order.service';
 import {

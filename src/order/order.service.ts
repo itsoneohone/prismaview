@@ -7,14 +7,14 @@ import {
 } from '@nestjs/common';
 import { catchError, from, map, mergeMap, of, zip } from 'rxjs';
 import { CreateOrderDto, UpdateOrderDto } from 'src/order/dto';
-import { PaginateDto, PaginateResultDto } from 'src/common/dto';
+import { PaginateDto, PaginateResultDto } from 'src/shared/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AccessKey, Order, Prisma } from '@prisma/client';
 import {
   SEARCH_LIMIT,
   preparePaginateResultDto,
-} from 'src/common/search-utils';
-import { DECIMAL_ROUNDING, Decimal } from 'src/common/amounts';
+} from 'src/shared/utils/search';
+import { DECIMAL_ROUNDING, Decimal } from 'src/shared/utils/amounts';
 import { makeOrderDtoUsingCcxtOrder } from 'src/order/dto';
 import { SyncMode } from 'src/lib/exchange/exchange.base';
 import { getCryptoExchange } from 'src/lib/exchange/common/utils';

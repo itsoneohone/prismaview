@@ -1,5 +1,5 @@
-import { PaginateDto } from 'src/common/dto';
-import { preparePaginateResultDto } from 'src/common/search-utils';
+import { PaginateDto } from 'src/shared/dto';
+import { preparePaginateResultDto } from 'src/shared/utils/search';
 
 describe('preparePaginateResultDto()', () => {
   const paginate: PaginateDto = {

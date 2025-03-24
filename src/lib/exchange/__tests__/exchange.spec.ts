@@ -28,7 +28,7 @@ describe('Exchanges', () => {
     let krakenExchange: KrakenExchange;
     let validateCredentialsSpy;
 
-    beforeAll(async () => {
+    beforeEach(() => {
       const exchangeData: GetExchangeDto = {
         userId: 1,
         accessKeyId: 1,
@@ -38,22 +38,12 @@ describe('Exchanges', () => {
       };
       krakenExchange = new KrakenExchange(exchangeData);
 
-      // Check if the kraken service is available
-      try {
-        await krakenExchange.validateCredentials();
-      } catch (error) {
-        if (error.message.indexOf('EService:Unavailable') > -1) {
-          validateCredentialsSpy = jest.spyOn(
-            krakenExchange,
-            'validateCredentials',
-          );
-          validateCredentialsSpy.mockImplementation(() =>
-            Promise.resolve(false),
-          );
-        } else {
-          throw error;
-        }
-      }
+      // Mock validateCredentials from the start to avoid external API calls
+      validateCredentialsSpy = jest.spyOn(
+        krakenExchange,
+        'validateCredentials',
+      );
+      validateCredentialsSpy.mockImplementation(() => Promise.resolve(false));
     });
 
     afterAll(() => {

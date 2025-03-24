@@ -16,7 +16,8 @@ import { uniq } from 'lodash';
 import { sleep } from 'pactum';
 import { FetchDirection } from 'src/price/common/constants';
 import { KrakenExchange } from 'src/lib/exchange/kraken-exchange';
-import { getLogTraceID, logWithTraceID, parseDate } from 'src/common/utils';
+import { getLogTraceID, logWithTraceID } from 'src/shared/utils/logging';
+import { parseDate } from 'src/shared/utils/common';
 
 @Injectable()
 export class PriceService {

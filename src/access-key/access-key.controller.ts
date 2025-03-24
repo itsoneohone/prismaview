@@ -12,7 +12,7 @@ import {
 import { AccessKeyService } from 'src/access-key/access-key.service';
 import { CreateAccessKeyDto } from 'src/access-key/dto';
 import { GetUserFromJwt } from 'src/auth/decorators';
-import { PaginateDto } from 'src/common/dto';
+import { PaginateDto } from 'src/shared/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Controller('access-key')
