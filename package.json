@@ -6,6 +6,8 @@
   "private": true,
   "license": "GNU GPL V3",
   "scripts": {
+    "cli:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register src/cli.ts",
+    "cli:start": "npx ts-node -r tsconfig-paths/register src/cli.ts",
     "prisma:dev:deploy": "prisma migrate deploy",
     "db:dev:rm": "docker-compose rm dev-db -s -f -v",
     "db:dev:up": "docker-compose up dev-db -d",
