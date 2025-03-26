@@ -40,7 +40,7 @@ export const appMetadata: ModuleMetadata = {
       inject: [ConfigService],
       useFactory: async (config: ConfigService) => {
         return {
-          ttl: config.get('CACHE_TTL') || 8000,
+          ttl: config.get('CACHE_TTL') || 30000,
           stores: [
             // new Keyv({
             //   store: new CacheableMemory({ ttl: 60000, lruSize: 5000 }),
