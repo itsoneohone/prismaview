@@ -15,8 +15,9 @@ export function UserCacheInterceptor(
     trackBy(context: ExecutionContext): string {
       const request = context.switchToHttp().getRequest();
       const userId = request.user?.id;
+      const queryString = new URLSearchParams(request.query).toString();
 
-      return `user:${userId}:${resourceType}`;
+      return `user:${userId}:${resourceType}:${queryString}`;
     }
   }
 

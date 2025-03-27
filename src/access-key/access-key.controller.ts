@@ -10,13 +10,12 @@ import {
   Query,
   UseInterceptors,
 } from '@nestjs/common';
-import { AccessKeyService } from 'src/access-key/access-key.service';
-import { CreateAccessKeyDto } from 'src/access-key/dto';
-import { GetUserFromJwt } from 'src/auth/decorators';
-import { PaginateDto } from 'src/shared/dto';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { CacheKey, CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
-import { UserCacheInterceptor } from 'src/shared/interceptors/user-cache.interceptor';
+import { AccessKeyService } from '@/access-key/access-key.service';
+import { CreateAccessKeyDto } from '@/access-key/dto';
+import { GetUserFromJwt } from '@/auth/decorators';
+import { PaginateDto } from '@shared/dto';
+import { PrismaService } from '@/prisma/prisma.service';
+import { UserCacheInterceptor } from '@shared/interceptors/user-cache.interceptor';
 
 @Controller('access-key')
 export class AccessKeyController {
