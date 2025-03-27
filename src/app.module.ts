@@ -17,8 +17,8 @@ import { AccessKeyModule } from './access-key/access-key.module';
 import { PlaygroundModule } from './playground/playground.module';
 import { PriceModule } from './price/price.module';
 import { createKeyv } from '@keyv/redis';
-// import { Keyv } from '@keyv/redis';
-// import { CacheableMemory } from 'cacheable';
+import { Keyv } from 'keyv';
+import { CacheableMemory } from 'cacheable';
 
 export const appMetadata: ModuleMetadata = {
   imports: [
@@ -31,21 +31,19 @@ export const appMetadata: ModuleMetadata = {
     UserModule,
     SchedulerModule,
     ScheduleModule.forRoot(),
-    // CacheModule.register({
-    //   isGlobal: true,
-    //   ttl: 6000,
-    // }),
+
     CacheModule.registerAsync({
       isGlobal: true,
       inject: [ConfigService],
       useFactory: async (config: ConfigService) => {
+        const ttl = config.get('CACHE_TTL') || 30000;
         return {
-          ttl: config.get('CACHE_TTL') || 30000,
+          ttl,
           stores: [
-            // new Keyv({
-            //   store: new CacheableMemory({ ttl: 60000, lruSize: 5000 }),
-            // }),
             createKeyv(config.getOrThrow('REDIS_URL')),
+            new Keyv({
+              store: new CacheableMemory({ ttl, lruSize: 5000 }),
+            }),
           ],
         };
       },
