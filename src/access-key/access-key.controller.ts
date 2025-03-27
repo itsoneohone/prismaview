@@ -15,7 +15,7 @@ import { CreateAccessKeyDto } from '@/access-key/dto';
 import { GetUserFromJwt } from '@/auth/decorators';
 import { PaginateDto } from '@shared/dto';
 import { PrismaService } from '@/prisma/prisma.service';
-import { UserCacheInterceptor } from '@shared/interceptors/user-cache.interceptor';
+import { PVCacheInterceptor } from '@/shared/interceptors';
 
 @Controller('access-key')
 export class AccessKeyController {
@@ -24,7 +24,7 @@ export class AccessKeyController {
     private prisma: PrismaService,
   ) {}
 
-  @UseInterceptors(UserCacheInterceptor('access-keys'))
+  @UseInterceptors(PVCacheInterceptor)
   @Get()
   getApiKeys(
     @GetUserFromJwt('id') userId: number,
