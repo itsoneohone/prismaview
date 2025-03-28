@@ -1,5 +1,5 @@
 import { Question, QuestionSet } from 'nest-commander';
-import { parseDate } from 'src/shared/utils/common';
+import { parseDate } from '@/shared/utils/time';
 
 export const QUESTIONS_START = 'questions-start';
 @QuestionSet({ name: QUESTIONS_START })

@@ -15,7 +15,3 @@ export enum FiatCurrencyLabel {
   // KRW = 'Korean Won (KRW)',
   USD = 'U.S. Dollar (USD)',
 }
-
-export enum TickerSymbol {
-  BTC = 'BTC',
-}

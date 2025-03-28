@@ -2,8 +2,10 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ExchangeNameEnum } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
-import { FiatCurrency, TickerSymbol } from 'src/lib/common/constants';
-import { getFetchPriceLimits, createPair, isFiat } from 'src/lib/common/utils';
+import { TickerSymbol } from '@/shared/constants';
+import { FiatCurrency } from '@/shared/constants/currency';
+import { createPair, isFiat } from '@/shared/utils/trading';
+import { calculateOhlcvTimeRange } from '@/shared/utils/time';
 import { BinanceExchange } from 'src/lib/exchange/binance-exchange';
 import { BitstampExchange } from 'src/lib/exchange/bitstamp-exchange';
 import { GetExchangeDto } from 'src/lib/exchange/dto';
@@ -14,10 +16,10 @@ import { CreatePriceDto } from 'src/price/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { uniq } from 'lodash';
 import { sleep } from 'pactum';
-import { FetchDirection } from 'src/price/common/constants';
+import { FetchDirection } from '@/shared/constants/price';
 import { KrakenExchange } from 'src/lib/exchange/kraken-exchange';
 import { getLogTraceID, logWithTraceID } from 'src/shared/utils/logging';
-import { parseDate } from 'src/shared/utils/common';
+import { parseDate } from '@/shared/utils/time';
 
 @Injectable()
 export class PriceService {
@@ -760,7 +762,7 @@ export class PriceService {
    * @param params
    * @returns
    */
-  private async _fetchfetchAndSaveOhlcvData(
+  private async _fetchAndSaveOhlcvData(
     cryptoExchange: CryptoExchange,
     market: string,
     params?: {
@@ -782,7 +784,7 @@ export class PriceService {
     // If no valid date has been provided, set the starting date to now.
     const startingDate = parseDate(startingDateString);
     let startTs = startingDate ? startingDate.getTime() : new Date().getTime();
-    ({ start, end } = getFetchPriceLimits(startTs, fetchLimit, direction));
+    ({ start, end } = calculateOhlcvTimeRange(startTs, fetchLimit, direction));
 
     while (true) {
       try {
@@ -837,7 +839,7 @@ export class PriceService {
           nextStartingDate.setMinutes(nextStartingDate.getMinutes() + 1);
         }
 
-        ({ start, end } = getFetchPriceLimits(
+        ({ start, end } = calculateOhlcvTimeRange(
           nextStartingDate,
           fetchLimit,
           direction,
@@ -889,7 +891,7 @@ export class PriceService {
     let logMsg = `Picked ${cryptoExchange.getName()} to fetch historical prices for the '${market}' market (Direction: ${direction})`;
     this.logger.log(logWithTraceID(logMsg, logTraceID));
 
-    const { totalFetched, totalSaved } = await this._fetchfetchAndSaveOhlcvData(
+    const { totalFetched, totalSaved } = await this._fetchAndSaveOhlcvData(
       cryptoExchange,
       market,
       {

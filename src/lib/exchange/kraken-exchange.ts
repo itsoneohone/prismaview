@@ -4,13 +4,13 @@ import { kraken } from 'ccxt';
 import { EMPTY, catchError, delay, expand, from, reduce, tap } from 'rxjs';
 import { GetExchangeDto } from 'src/lib/exchange/dto';
 import { BaseExchange } from 'src/lib/exchange/exchange.base';
-import { FetchDirection } from 'src/price/common/constants';
+import { FetchDirection } from '@/shared/constants/price';
 
 export class KrakenExchange extends BaseExchange {
-  public declare readonly exchange: kraken;
-  public declare readonly rateLimit: number;
-  public declare readonly fetchLimit: number;
-  public declare readonly fetchDirection: FetchDirection;
+  declare public readonly exchange: kraken;
+  declare public readonly rateLimit: number;
+  declare public readonly fetchLimit: number;
+  declare public readonly fetchDirection: FetchDirection;
   constructor(exchangeDto: GetExchangeDto) {
     super(exchangeDto);
     this.name = ExchangeNameEnum.KRAKEN;

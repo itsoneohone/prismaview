@@ -3,13 +3,13 @@ import { ExchangeNameEnum } from '@prisma/client';
 import { bitstamp } from 'ccxt';
 import { GetExchangeDto } from 'src/lib/exchange/dto';
 import { BaseExchange } from 'src/lib/exchange/exchange.base';
-import { FetchDirection } from 'src/price/common/constants';
+import { FetchDirection } from '@/shared/constants/price';
 
 export class BitstampExchange extends BaseExchange {
-  public declare exchange: bitstamp;
-  public declare readonly rateLimit: number;
-  public declare readonly fetchLimit: number;
-  public declare readonly fetchDirection: FetchDirection;
+  declare public exchange: bitstamp;
+  declare public readonly rateLimit: number;
+  declare public readonly fetchLimit: number;
+  declare public readonly fetchDirection: FetchDirection;
   constructor(exchangeDto: GetExchangeDto) {
     super(exchangeDto);
     this.name = ExchangeNameEnum.BITSTAMP;

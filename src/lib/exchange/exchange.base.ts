@@ -2,7 +2,7 @@ import { Logger } from '@nestjs/common';
 import { ExchangeNameEnum } from '@prisma/client';
 import { Observable } from 'rxjs';
 import { GetExchangeDto } from 'src/lib/exchange/dto';
-import { FetchDirection } from 'src/price/common/constants';
+import { FetchDirection } from '@/shared/constants/price';
 
 export enum SyncMode {
   ALL = 'ALL',

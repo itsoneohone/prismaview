@@ -1,15 +1,19 @@
-import { FiatCurrency } from 'src/lib/common/constants';
-import { FetchDirection } from 'src/price/common/constants';
+import { FetchDirection } from '../constants/price';
 
-export function isFiat(tickerSymbol: string): Boolean {
-  return Object.keys(FiatCurrency).indexOf(tickerSymbol) > -1;
-}
-
-export function createPair(base, quote): string {
-  return [base, quote].join('/');
-}
+export const sleep = (ms) => {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+};
 
 /**
+ * Return a valid date object or null if the provided date (string/object) is invalid.
+ *
+ * @param input Date string or object
+ * @returns Date | null
+ */
+export const parseDate = (input: string | Date): Date | null => {
+  const date = input instanceof Date ? input : new Date(input);
+  return isNaN(date.getTime()) ? null : date;
+}; /**
  * Given a starting date, calculate the 'start' and 'end' params that will be used
  * to fetch historical prices.
  *
@@ -55,7 +59,8 @@ export function createPair(base, quote): string {
  * @param direction FetchDirection
  * @returns
  */
-export function getFetchPriceLimits(
+
+export function calculateOhlcvTimeRange(
   startingDate: number | Date | string,
   timeframeInMins: number,
   direction: FetchDirection,

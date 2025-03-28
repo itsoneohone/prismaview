@@ -6,10 +6,10 @@ import {
   InquirerService,
   Option,
 } from 'nest-commander';
-import { parseDate } from 'src/shared/utils/common';
-import { isSupportedExchange } from 'src/lib/exchange/common/utils';
+import { parseDate } from '@/shared/utils/time';
+import { isSupportedExchange } from '@/lib/exchange/shared/utils';
 
-import { FetchDirection } from 'src/price/common/constants';
+import { FetchDirection } from '@/shared/constants/price';
 import { QUESTIONS_START } from 'src/commands/inquirer/price.inquirer.start';
 import { QUESTIONS_EXCHANGE } from 'src/commands/inquirer/price.inquirer.exchange';
 import { QUESTIONS_TASK } from 'src/commands/inquirer/price.inquirer.task';

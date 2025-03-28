@@ -9,7 +9,7 @@ import {
 import { from, Observable } from 'rxjs';
 import { delay, map } from 'rxjs/operators';
 import { Server, Socket } from 'socket.io';
-import { sleep } from 'src/shared/utils/common';
+import { sleep } from '@/shared/utils/time';
 
 @WebSocketGateway({
   cors: {

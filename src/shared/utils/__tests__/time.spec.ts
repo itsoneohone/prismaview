@@ -1,7 +1,7 @@
-import { getFetchPriceLimits } from 'src/lib/common/utils';
-import { FetchDirection } from 'src/price/common/constants';
+import { FetchDirection } from '@/shared/constants';
+import { calculateOhlcvTimeRange } from '@/shared/utils/time';
 
-describe('getFetchPriceLimits()', () => {
+describe('calculateOhlcvTimeRange()', () => {
   const timeframeInHours = 10;
   const timeframeInMins = timeframeInHours * 60;
   const startingDate = new Date(2024, 0, 1, timeframeInHours, 0, 0);
@@ -9,17 +9,17 @@ describe('getFetchPriceLimits()', () => {
   it('should throw an error if the startingDate is invalid', () => {
     let invalidDate = undefined;
     expect(() =>
-      getFetchPriceLimits(invalidDate, timeframeInMins, FetchDirection.ASC),
+      calculateOhlcvTimeRange(invalidDate, timeframeInMins, FetchDirection.ASC),
     ).toThrow(`Invalid startingDate '${invalidDate}'`);
 
     invalidDate = '';
     expect(() =>
-      getFetchPriceLimits(invalidDate, timeframeInMins, FetchDirection.ASC),
+      calculateOhlcvTimeRange(invalidDate, timeframeInMins, FetchDirection.ASC),
     ).toThrow(`Invalid startingDate '${invalidDate}'`);
 
     invalidDate = new Date(-1, -1, -1);
     expect(() =>
-      getFetchPriceLimits(invalidDate, timeframeInMins, FetchDirection.ASC),
+      calculateOhlcvTimeRange(invalidDate, timeframeInMins, FetchDirection.ASC),
     ).toThrow(`Invalid startingDate '${invalidDate}'`);
   });
 
@@ -28,7 +28,7 @@ describe('getFetchPriceLimits()', () => {
     const expectedEnd = new Date('2024-01-01T15:59:00.000Z');
 
     it('should return the limits based on a starting date unix timestamp', () => {
-      const { start, end } = getFetchPriceLimits(
+      const { start, end } = calculateOhlcvTimeRange(
         startingDate.getTime(),
         timeframeInMins,
         FetchDirection.ASC,
@@ -39,7 +39,7 @@ describe('getFetchPriceLimits()', () => {
     });
 
     it('should return the limits based on a starting date object', () => {
-      const { start, end } = getFetchPriceLimits(
+      const { start, end } = calculateOhlcvTimeRange(
         startingDate,
         timeframeInMins,
         FetchDirection.ASC,
@@ -50,7 +50,7 @@ describe('getFetchPriceLimits()', () => {
     });
 
     it('should return the limits based on a starting date string', () => {
-      const { start, end } = getFetchPriceLimits(
+      const { start, end } = calculateOhlcvTimeRange(
         startingDate.toISOString(),
         timeframeInMins,
         FetchDirection.ASC,
@@ -66,7 +66,7 @@ describe('getFetchPriceLimits()', () => {
     const expectedStart = new Date('2023-12-31T20:01:00.000Z');
 
     it('should return the limits based on a starting date unix timestamp', () => {
-      const { start, end } = getFetchPriceLimits(
+      const { start, end } = calculateOhlcvTimeRange(
         startingDate.getTime(),
         timeframeInMins,
         FetchDirection.DESC,
@@ -77,7 +77,7 @@ describe('getFetchPriceLimits()', () => {
     });
 
     it('should return the limits based on a starting date object', () => {
-      const { start, end } = getFetchPriceLimits(
+      const { start, end } = calculateOhlcvTimeRange(
         startingDate,
         timeframeInMins,
         FetchDirection.DESC,
@@ -88,7 +88,7 @@ describe('getFetchPriceLimits()', () => {
     });
 
     it('should return the limits based on a starting date string', () => {
-      const { start, end } = getFetchPriceLimits(
+      const { start, end } = calculateOhlcvTimeRange(
         startingDate.toISOString(),
         timeframeInMins,
         FetchDirection.DESC,

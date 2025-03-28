@@ -17,7 +17,7 @@ import {
 import { DECIMAL_ROUNDING, Decimal } from 'src/shared/utils/amounts';
 import { makeOrderDtoUsingCcxtOrder } from 'src/order/dto';
 import { SyncMode } from 'src/lib/exchange/exchange.base';
-import { getCryptoExchange } from 'src/lib/exchange/common/utils';
+import { getCryptoExchange } from '@/lib/exchange/shared/utils';
 import {
   calculateOrderAmounts,
   getTickerSymbols,

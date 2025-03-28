@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { version as ccxtVersion } from 'ccxt';
 import { ConfigService } from '@nestjs/config';
-import { sleep } from 'src/shared/utils/common';
+import { sleep } from '@/shared/utils/time';
 import { EMPTY, catchError, delay, expand, reduce, tap } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { AxiosError } from 'axios';
