@@ -21,8 +21,10 @@ export const CreateOrderDtoStub = (): CreateOrderDto => {
   // filled * price
   const cost = price.mul(filled).toDecimalPlaces(DECIMAL_ROUNDING);
   const fee = getRandomAmount(1);
-
   const symbol = 'BTC/USD';
+  const base = symbol.split('/')[0];
+  const quote = symbol.split('/')[1];
+  const currency = symbol.split('/')[1];
 
   return {
     orderId: faker.string.uuid(),
@@ -39,10 +41,9 @@ export const CreateOrderDtoStub = (): CreateOrderDto => {
     accessKeyId: null,
     userId: null,
     rawData: null,
-    // The following 3 fields should be calculated based on the symbol, when an order is created
-    base: null,
-    quote: null,
-    currency: null,
+    base,
+    quote,
+    currency,
   };
 };
 export const createOrderDtoStubStatic = CreateOrderDtoStub();

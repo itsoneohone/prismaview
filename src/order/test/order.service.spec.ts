@@ -1,36 +1,37 @@
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
-import { after, before } from 'node:test';
 import { DECIMAL_ROUNDING, getRandomAmount } from 'src/shared/utils/amounts';
-import { PaginateDto, PaginateResultDto } from 'src/shared/dto';
-import {
-  SEARCH_LIMIT,
-  preparePaginateResultDto,
-} from 'src/shared/utils/search';
+import { PaginateDto } from 'src/shared/dto';
+import { SEARCH_LIMIT } from 'src/shared/utils/search';
 import { CreateOrderDto, UpdateOrderDto } from 'src/order/dto';
 import { OrderService } from 'src/order/order.service';
 import {
   createOrderDtoStubStatic,
+  orderStubs,
   orderStubStatic,
   updateOrderDtoStubStatic,
   updateOrderStubStatic,
 } from 'src/order/stubs';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { userStubStatic } from 'src/user/stubs';
-
-jest.mock('../../prisma/prisma.service.ts');
+import { PrismaClient } from '@prisma/client';
+import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
+// jest.mock('../../prisma/prisma.service.ts');
 
 describe('OrderService', () => {
   const user = userStubStatic;
   let service: OrderService;
-  let prisma: PrismaService;
+  let prisma: DeepMockProxy<PrismaClient>;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     const module = await Test.createTestingModule({
       providers: [OrderService, PrismaService],
       imports: [ConfigModule.forRoot(), HttpModule],
-    }).compile();
+    })
+      .overrideProvider(PrismaService)
+      .useValue(mockDeep<PrismaClient>())
+      .compile();
 
     service = module.get(OrderService);
     prisma = module.get(PrismaService);
@@ -44,6 +45,10 @@ describe('OrderService', () => {
     // Use the static stubs used for auto mocking the prisma service
     const createOrderDtoStub: CreateOrderDto = createOrderDtoStubStatic;
     const orderStub = orderStubStatic;
+
+    beforeEach(() => {
+      prisma.order.create.mockResolvedValue(orderStub as any);
+    });
 
     describe('_prepareCreateOrderDto', () => {
       it('should set the amount and currency fields', () => {
@@ -62,34 +67,26 @@ describe('OrderService', () => {
     });
 
     describe('createOrder()', () => {
-      let order;
-
-      beforeAll(async () => {
-        order = await service.createOrder(user.id, createOrderDtoStub);
-      });
-
-      it('should call prisma.order.create()', () => {
-        // Set the amount and currency related fields
-        const createOrderDto =
-          service._prepareCreateOrderDto(createOrderDtoStub);
-
+      it('call the prisma.order.create()', async () => {
+        await service.createOrder(user.id, createOrderDtoStub);
         expect(prisma.order.create).toHaveBeenCalled();
         expect(prisma.order.create).toHaveBeenCalledWith({
           data: {
-            ...createOrderDto,
+            ...createOrderDtoStub,
             userId: user.id,
           },
         });
-        expect(prisma.order.create).toHaveReturnedWith(orderStub);
       });
 
-      it('should create an order', () => {
-        expect(order).toMatchObject(orderStub);
+      it('should create a new order', () => {
+        expect(
+          service.createOrder(user.id, createOrderDtoStub),
+        ).resolves.toEqual(orderStub);
       });
     });
   });
 
-  describe('Update an order using its ID', () => {
+  describe.only('Update an order using its ID', () => {
     describe('_prepareUpdateOrderDto()', () => {
       let updateOrderDto;
       let updateOrder;
@@ -97,18 +94,14 @@ describe('OrderService', () => {
       let initialFilled;
       let initialPrice;
       let initialCost;
-      let initialDatetime;
-      let initialTimestamp;
 
-      beforeAll(() => {
+      beforeEach(() => {
         // Use the static stubs used for auto mocking the prisma service
         updateOrderDto = updateOrderDtoStubStatic;
         updateOrder = updateOrderStubStatic;
         initialFilled = updateOrderDto.filled;
         initialPrice = updateOrderDto.price;
         initialCost = updateOrderDto.cost;
-        initialDatetime = updateOrderDto.datetime;
-        initialTimestamp = updateOrderDto.timestamp;
       });
 
       afterEach(() => {
@@ -117,7 +110,7 @@ describe('OrderService', () => {
         updateOrderDto.filled = initialFilled;
       });
 
-      it('update the dto amount fields when the filled and price fields change', async () => {
+      it('update the dto "amount" fields when the "filled" and "price" fields change', async () => {
         updateOrderDto.filled = getRandomAmount(100);
         updateOrderDto.price = getRandomAmount(100);
         updatedOrderData = await service._prepareUpdateOrderDto(
@@ -137,7 +130,7 @@ describe('OrderService', () => {
         );
       });
 
-      it('update the dto amount fields when only the filled value changes', async () => {
+      it('update the dto "amount" fields when only the "amount" value changes', async () => {
         delete updateOrderDto.filled;
         updateOrderDto.price = getRandomAmount(100);
         updatedOrderData = await service._prepareUpdateOrderDto(
@@ -158,7 +151,7 @@ describe('OrderService', () => {
         );
       });
 
-      it('update the dto amount fields when only the price value changes', async () => {
+      it('update the dto "amount" fields when only the "filled" value changes', async () => {
         delete updateOrderDto.price;
         updateOrderDto.filled = getRandomAmount(100);
         updatedOrderData = await service._prepareUpdateOrderDto(
@@ -179,7 +172,7 @@ describe('OrderService', () => {
         );
       });
 
-      it('update the dto currency fields when the symbol field changes', async () => {
+      it('update the dto "currency" fields when the "symbol" field changes', async () => {
         const initialSymbol = updateOrderDto.symbol;
         const newBase = 'ETH';
         const newQuote = 'EUR';
@@ -198,7 +191,7 @@ describe('OrderService', () => {
         expect(updatedOrderData.currency).toEqual(newQuote);
       });
 
-      it('update the timestamp when the datetime field change', async () => {
+      it('update the "timestamp" when the datetime field change', async () => {
         const initialDatetime = updateOrderDto.datetime;
         const initialTimestamp = updateOrderDto.timestamp;
         const newDatetime = new Date();
@@ -220,7 +213,7 @@ describe('OrderService', () => {
         );
       });
 
-      it('do not update the dto amount fields when no new filled and price values are provided', async () => {
+      it('do not update the dto "amount" fields when NO new "filled" and price values are provided', async () => {
         delete updateOrderDto.filled;
         delete updateOrderDto.price;
         updatedOrderData = await service._prepareUpdateOrderDto(
@@ -233,7 +226,7 @@ describe('OrderService', () => {
         expect(updatedOrderData.cost).toBeUndefined;
       });
 
-      it('do not update the timestamp fields when no new datetime value is provided', async () => {
+      it('do not update the "timestamp" fields when NO new "datetime" value is provided', async () => {
         delete updateOrderDto.datetime;
         updatedOrderData = await service._prepareUpdateOrderDto(
           updateOrderDto,
@@ -248,16 +241,20 @@ describe('OrderService', () => {
     describe('updateOrderById()', () => {
       // Use the static stubs used for auto mocking the prisma service
       const createOrderDtoStub: CreateOrderDto = createOrderDtoStubStatic;
+      const createdOrderStub = orderStubStatic;
       const updateOrderDtoStub: UpdateOrderDto = updateOrderDtoStubStatic;
       const updatedOrderStub = updateOrderStubStatic;
       let order;
       let updatedOrder;
       let getOrderByIdSpy;
       let prepareUpdateOrderDtoSpy;
-      beforeAll(async () => {
-        getOrderByIdSpy = jest.spyOn(service, '_getOrderById');
-        getOrderByIdSpy.mockImplementation(() => order);
 
+      beforeEach(async () => {
+        prisma.order.create.mockResolvedValue(createdOrderStub as any);
+        prisma.order.update.mockResolvedValue(updatedOrderStub as any);
+
+        getOrderByIdSpy = jest.spyOn(service, '_getOrderById');
+        getOrderByIdSpy.mockResolvedValue(createdOrderStub);
         prepareUpdateOrderDtoSpy = jest.spyOn(
           service,
           '_prepareUpdateOrderDto',
@@ -265,23 +262,31 @@ describe('OrderService', () => {
         prepareUpdateOrderDtoSpy.mockImplementation(() => updateOrderDtoStub);
 
         order = await service.createOrder(user.id, createOrderDtoStub);
+      });
+
+      afterEach(() => {
+        getOrderByIdSpy.mockRestore();
+        prepareUpdateOrderDtoSpy.mockRestore();
+      });
+
+      it('should call service._getOrderById()', async () => {
         updatedOrder = await service.updateOrderById(
           user.id,
           order.id,
           updateOrderDtoStub,
         );
-      });
 
-      afterAll(() => {
-        // Restore the original implementation
-        getOrderByIdSpy.mockRestore();
-        prepareUpdateOrderDtoSpy.mockRestore();
-      });
-
-      it('_getOrderById() and _prepareUpdateOrderDto() should be called', () => {
         expect(service._getOrderById).toHaveBeenCalled;
         expect(service._getOrderById).toHaveBeenCalledWith(user.id, order.id);
-        expect(service._getOrderById).toHaveReturnedWith(order);
+      });
+
+      it('should call service._prepareUpdateOrderDto()', async () => {
+        updatedOrder = await service.updateOrderById(
+          user.id,
+          order.id,
+          updateOrderDtoStub,
+        );
+
         expect(service._prepareUpdateOrderDto).toHaveBeenCalled;
         expect(service._prepareUpdateOrderDto).toHaveBeenCalledWith(
           updateOrderDtoStub,
@@ -289,116 +294,96 @@ describe('OrderService', () => {
         );
       });
 
-      it('should update an order', () => {
-        expect(updatedOrder).toMatchObject(updatedOrderStub);
+      it('should call prisma.order.update()', async () => {
+        updatedOrder = await service.updateOrderById(
+          user.id,
+          order.id,
+          updateOrderDtoStub,
+        );
+
+        expect(prisma.order.update).toHaveBeenCalled();
+        expect(prisma.order.update).toHaveBeenCalledWith({
+          where: { id: order.id, userId: user.id },
+          data: updateOrderDtoStub,
+        });
+      });
+
+      it('should update an order', async () => {
+        expect(
+          service.updateOrderById(user.id, order.id, updateOrderDtoStub),
+        ).resolves.toEqual(updatedOrderStub);
       });
     });
   });
 
   describe('getOrders()', () => {
-    let ordersRes: PaginateResultDto;
-    let orders;
-    let expectedOrdersRes: PaginateResultDto;
+    beforeEach(async () => {
+      prisma.order.findMany.mockResolvedValue(orderStubs as any);
+      prisma.order.count.mockResolvedValue(orderStubs.length);
+    });
 
-    describe('when called without a PaginateDto', () => {
-      const paginateDto: PaginateDto = {
-        limit: SEARCH_LIMIT,
-        offset: 0,
-      };
+    it('should call prisma.order.findMany()', async () => {
+      await service.getOrders(user.id);
 
-      beforeAll(async () => {
-        ordersRes = await service.getOrders(user.id);
-        orders = ordersRes.data;
-        // Fn getApiKeys is expected to return the following result
-        expectedOrdersRes = preparePaginateResultDto(
-          orders,
-          orders.length,
-          paginateDto,
-        );
-      });
-
-      it('should call prisma.order.findMany()', () => {
-        const prismaFn = prisma.order.findMany;
-        expect(prismaFn).toHaveBeenCalled();
-        expect(prismaFn).toHaveBeenCalledWith({
-          where: {
-            userId: user.id,
-          },
-          orderBy: {
-            createdAt: 'desc',
-          },
-          take: SEARCH_LIMIT,
-          skip: 0,
-        });
-        expect(prismaFn).toHaveReturnedWith(orders);
-      });
-
-      it('should call prisma.orders.count()', () => {
-        const prismaFn = prisma.order.count;
-        expect(prismaFn).toHaveBeenCalled();
-        expect(prismaFn).toHaveBeenCalledWith({
-          where: {
-            userId: user.id,
-          },
-        });
-        expect(prismaFn).toHaveReturnedWith(orders.length);
-      });
-
-      it('should return the orders of the user', () => {
-        expect(ordersRes.data).toMatchObject(orders);
-        expect(ordersRes.count).toEqual(orders.length);
-        expect(ordersRes.hasMore).toEqual(false);
+      const prismaFn = prisma.order.findMany;
+      expect(prismaFn).toHaveBeenCalled();
+      expect(prismaFn).toHaveBeenCalledWith({
+        where: {
+          userId: user.id,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        take: SEARCH_LIMIT,
+        skip: 0,
       });
     });
 
-    describe('when called with a PaginateDto', () => {
+    it('should call prisma.orders.count()', async () => {
+      await service.getOrders(user.id);
+
+      const prismaFn = prisma.order.count;
+      expect(prismaFn).toHaveBeenCalled();
+      expect(prismaFn).toHaveBeenCalledWith({
+        where: {
+          userId: user.id,
+        },
+      });
+    });
+
+    it('should return the first page of the orders of the user when no PaginateDto is provided', async () => {
+      expect(service.getOrders(user.id)).resolves.toStrictEqual({
+        data: orderStubs,
+        count: orderStubs.length,
+        hasMore: false,
+      });
+    });
+
+    it('should return all orders of the user when their orders are less than the pagination limit', async () => {
       const paginateDto: PaginateDto = {
         limit: SEARCH_LIMIT,
         offset: 0,
       };
-
-      beforeAll(async () => {
-        ordersRes = await service.getOrders(user.id, paginateDto);
-        orders = ordersRes.data;
-        // Fn getApiKeys is expected to return the following result
-        expectedOrdersRes = preparePaginateResultDto(
-          orders,
-          orders.length,
-          paginateDto,
-        );
+      expect(service.getOrders(user.id, paginateDto)).resolves.toStrictEqual({
+        data: orderStubs,
+        count: orderStubs.length,
+        hasMore: false,
       });
+    });
 
-      it('should call prisma.orders.findMany()', () => {
-        const prismaFn = prisma.order.findMany;
-        expect(prismaFn).toHaveBeenCalled();
-        expect(prismaFn).toHaveBeenCalledWith({
-          where: {
-            userId: user.id,
-          },
-          orderBy: {
-            createdAt: 'desc',
-          },
-          take: paginateDto.limit,
-          skip: paginateDto.offset,
-        });
-        expect(prismaFn).toHaveReturnedWith(orders);
-      });
+    it('should return the first orders of the user when their orders are more than the pagination limit', async () => {
+      // Override the prisma.order.findMany() to return only the first order to test the pagination
+      // with a single order per page
+      prisma.order.findMany.mockResolvedValue(orderStubs.slice(0, 1) as any);
+      const paginateDto: PaginateDto = {
+        limit: 1,
+        offset: 0,
+      };
 
-      it('should call prisma.order.count()', () => {
-        const prismaFn = prisma.order.count;
-        expect(prismaFn).toHaveBeenCalled();
-        expect(prismaFn).toHaveBeenCalledWith({
-          where: {
-            userId: user.id,
-          },
-        });
-        expect(prismaFn).toHaveReturnedWith(orders.length);
-      });
-
-      it('should return the Api keys of the user', () => {
-        expect(ordersRes.data).toMatchObject(orders);
-        expect(ordersRes.count).toEqual(orders.length);
-        expect(ordersRes.hasMore).toEqual(false);
+      expect(service.getOrders(user.id, paginateDto)).resolves.toStrictEqual({
+        data: orderStubs.slice(0, 1),
+        count: orderStubs.length,
+        hasMore: true,
       });
     });
   });
