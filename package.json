@@ -39,6 +39,7 @@
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.1.0",
     "@nestjs/jwt": "^11.0.0",
+    "@nestjs/mapped-types": "^2.1.0",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.1.0",
     "@nestjs/platform-socket.io": "^11.1.0",
@@ -111,6 +112,8 @@
     ],
     "moduleNameMapper": {
       "@/(.*)": "<rootDir>/src/$1",
+      "@lib/(.*)": "<rootDir>/src/lib/$1",
+      "@order/(.*)": "<rootDir>/src/order/$1",
       "@shared/(.*)": "<rootDir>/src/shared/$1"
     },
     "testRegex": ".*\\.spec\\.ts$",

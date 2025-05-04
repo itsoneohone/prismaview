@@ -6,7 +6,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { catchError, from, map, mergeMap, of, zip } from 'rxjs';
-import { CreateOrderDto, UpdateOrderDto } from 'src/order/dto';
+import {
+  CreateOrderDbDto,
+  CreateOrderDto,
+  UpdateOrderDto,
+  OrderDtoMappers,
+} from '@/order/dto';
 import { PaginateDto, PaginateResultDto } from 'src/shared/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AccessKey, Order, Prisma } from '@prisma/client';
@@ -14,14 +19,8 @@ import {
   SEARCH_LIMIT,
   preparePaginateResultDto,
 } from 'src/shared/utils/search';
-import { DECIMAL_ROUNDING, Decimal } from 'src/shared/utils/amounts';
-import { makeOrderDtoUsingCcxtOrder } from 'src/order/dto';
 import { SyncMode } from 'src/lib/exchange/exchange.base';
 import { getCryptoExchange } from '@/lib/exchange/shared/utils';
-import {
-  calculateOrderAmounts,
-  getTickerSymbols,
-} from 'src/order/common/utils';
 
 @Injectable()
 export class OrderService {
@@ -52,68 +51,6 @@ export class OrderService {
   }
 
   /**
-   * Update the CreateOrderDto by setting all amounts and currency values
-   *
-   * @param dto CreateOrderDto
-   * @returns dto
-   */
-  _prepareCreateOrderDto(dto: CreateOrderDto) {
-    return {
-      ...dto,
-      // Convert filled and price amounts to decimal and calculate cost
-      ...calculateOrderAmounts(dto.filled, dto.price),
-      // Get the base, quote and currency values
-      ...getTickerSymbols(dto.symbol),
-      // Get the unix timestamp based on the input date
-      timestamp: BigInt(new Date(dto.datetime).getTime()),
-    };
-  }
-
-  /**
-   * Check if there is an updated filled amount and price set, and recalculate the cost
-   *
-   * @param dto UpdateOrderDto
-   * @returns dto
-   */
-  _prepareUpdateOrderDto(dto: UpdateOrderDto, order: Order) {
-    // If at least the filled or the price values have changed, recalculate the cost
-    if (dto.filled || dto.price) {
-      let filled = dto.filled;
-      let price = dto.price;
-
-      if (filled && !price) {
-        // New filled value, use the existing order price
-        price = order.price;
-      } else if (price && !filled) {
-        // New price value, use the existing filled value
-        filled = order.filled;
-      }
-
-      dto = {
-        ...dto,
-        ...calculateOrderAmounts(filled, price),
-      };
-    }
-
-    // Update the base, quote and currency based on the new symbol
-    if (dto.symbol) {
-      dto = {
-        ...dto,
-        // Update base, quote and currency
-        ...getTickerSymbols(dto.symbol),
-      };
-    }
-
-    // @todo - convert amounts to user's base currency if needed
-    // Get the unix timestamp based on the input date
-    if (dto.datetime) {
-      dto.timestamp = BigInt(new Date(dto.datetime).getTime());
-    }
-
-    return dto;
-  }
-
-  /**
    * Create a new order for a user.
    *
    * Used for a manual creation of an order by the user.
@@ -124,10 +61,7 @@ export class OrderService {
    */
   createOrder(userId: number, dto: CreateOrderDto): Promise<Order> {
     return this.prisma.order.create({
-      data: {
-        ...this._prepareCreateOrderDto(dto),
-        userId,
-      },
+      data: OrderDtoMappers.toCreateOrderDbDto(userId, dto),
     });
   }
 
@@ -145,16 +79,13 @@ export class OrderService {
     dto: UpdateOrderDto,
   ): Promise<Order> {
     const order = await this._getOrderById(userId, id);
-    const updatedDto = this._prepareUpdateOrderDto(dto, order);
 
     return this.prisma.order.update({
       where: {
         id,
         userId,
       },
-      data: {
-        ...updatedDto,
-      },
+      data: OrderDtoMappers.toUpdateOrderDbDto(dto, order),
     });
   }
 
@@ -376,9 +307,13 @@ export class OrderService {
         });
 
         // Prepare the order DTOs;
-        const dtos: CreateOrderDto[] = Object.values(allOrdersDict).map(
+        const dtos: CreateOrderDbDto[] = Object.values(allOrdersDict).map(
           (curr: any) => {
-            return makeOrderDtoUsingCcxtOrder(userId, accessKey.id, curr);
+            return OrderDtoMappers.ccxtToCreateOrderDbDto(
+              userId,
+              accessKey.id,
+              curr,
+            );
           },
         );
 

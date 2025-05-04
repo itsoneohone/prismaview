@@ -20,6 +20,8 @@
     "resolveJsonModule": true,
     "paths": {
       "@/*": ["./src/*"],
+      "@lib/*": ["src/lib/*"],
+      "@order/*": ["src/order/*"],
       "@shared/*": ["src/shared/*"]
     }
   }

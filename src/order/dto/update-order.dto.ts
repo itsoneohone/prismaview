@@ -1,10 +1,10 @@
 import { OrderSideEnum, OrderStatusEnum, OrderTypeEnum } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
+import { OmitType } from '@nestjs/mapped-types';
 import {
   IsDateString,
   IsDecimal,
   IsEnum,
-  IsNumber,
   IsOptional,
   IsString,
 } from 'class-validator';
@@ -14,9 +14,8 @@ export class UpdateOrderDto {
   @IsOptional()
   orderId: string;
 
-  @IsNumber()
   @IsOptional()
-  timestamp: bigint;
+  timestamp: string | number;
 
   @IsDateString()
   @IsOptional()
@@ -29,19 +28,6 @@ export class UpdateOrderDto {
   @IsString()
   @IsOptional()
   symbol: string;
-
-  @IsString()
-  @IsOptional()
-  base: string;
-
-  @IsString()
-  @IsOptional()
-  quote: string;
-
-  // All amounts are designated in this currency, which is the same as the quote currency.
-  @IsString()
-  @IsOptional()
-  currency: string;
 
   @IsEnum(OrderTypeEnum)
   @IsOptional()
@@ -60,12 +46,29 @@ export class UpdateOrderDto {
   @IsOptional()
   filled: Decimal;
 
+  @IsDecimal()
+  @IsOptional()
+  fee: Decimal;
+}
+
+export class UpdateOrderDbDto extends OmitType(UpdateOrderDto, ['timestamp']) {
+  declare timestamp: bigint;
+
+  @IsString()
+  @IsOptional()
+  base: string;
+
+  @IsString()
+  @IsOptional()
+  quote: string;
+
+  // All amounts are designated in this currency, which is the same as the quote currency.
+  @IsString()
+  @IsOptional()
+  currency: string;
+
   // filled * price
   @IsDecimal()
   @IsOptional()
   cost: Decimal;
-
-  @IsDecimal()
-  @IsOptional()
-  fee: Decimal;
 }
