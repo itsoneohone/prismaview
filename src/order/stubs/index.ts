@@ -5,45 +5,22 @@ import {
   OrderStatusEnum,
   OrderTypeEnum,
 } from '@prisma/client';
-import { CreateOrderDto, UpdateOrderDto } from 'src/order/dto';
-import { DECIMAL_ROUNDING, getRandomAmount } from 'src/shared/utils/amounts';
-import { userStubStatic } from 'src/user/stubs';
-import {
-  getTickerSymbols,
-  calculateOrderAmounts,
-} from 'src/order/common/utils';
+import { CreateOrderDto, UpdateOrderDto } from '@/order/dto';
+import { DECIMAL_ROUNDING, getRandomAmount } from '@/shared/utils/amounts';
 
 export const CreateOrderDtoStub = (): CreateOrderDto => {
   const date = new Date();
-  const price = getRandomAmount(100);
-  // actual order amount filled
-  const filled = getRandomAmount(10);
-  // filled * price
-  const cost = price.mul(filled).toDecimalPlaces(DECIMAL_ROUNDING);
-  const fee = getRandomAmount(1);
-  const symbol = 'BTC/USD';
-  const base = symbol.split('/')[0];
-  const quote = symbol.split('/')[1];
-  const currency = symbol.split('/')[1];
-
   return {
     orderId: faker.string.uuid(),
-    timestamp: BigInt(date.getTime()),
+    timestamp: date.getTime(),
     datetime: date,
     status: OrderStatusEnum.CLOSED,
-    symbol,
+    symbol: 'BTC/USD',
     type: OrderTypeEnum.MARKET,
     side: OrderSideEnum.BUY,
-    price,
-    filled,
-    cost,
-    fee,
-    accessKeyId: null,
-    userId: null,
-    rawData: null,
-    base,
-    quote,
-    currency,
+    price: getRandomAmount(100),
+    filled: getRandomAmount(10),
+    fee: getRandomAmount(1),
   };
 };
 export const createOrderDtoStubStatic = CreateOrderDtoStub();
@@ -54,8 +31,15 @@ export const OrderStub = (
   userId: number,
   dto?: CreateOrderDto | UpdateOrderDto,
 ) => {
-  const { filled, price, cost } = calculateOrderAmounts(dto.filled, dto.price);
-  const { base, quote, currency } = getTickerSymbols(dto.symbol);
+  // Calculate the cost based on the price and the filled amount
+  const price = dto.price || getRandomAmount(100);
+  const filled = dto.filled || getRandomAmount(10);
+  const cost = price.mul(filled).toDecimalPlaces(DECIMAL_ROUNDING);
+  // Set the base, quote and currency based on the symbol
+  const base = dto.symbol.split('/')[0];
+  const quote = dto.symbol.split('/')[1];
+  const currency = dto.symbol.split('/')[1];
+
   return {
     ...(dto || CreateOrderDtoStub()),
     userId,
@@ -71,18 +55,19 @@ export const OrderStub = (
     updatedAt: date,
   };
 };
-const _user = userStubStatic;
-export const orderStubStatic = OrderStub(_user.id, createOrderDtoStubStatic);
-export const orderStubStatic2 = OrderStub(_user.id, createOrderDtoStubStatic2);
+export const userId = 123;
+export const orderStubStatic = OrderStub(userId, createOrderDtoStubStatic);
+export const orderStubStatic2 = OrderStub(userId, createOrderDtoStubStatic2);
 
 export const updateOrderDtoStubStatic: UpdateOrderDto = {
   ...createOrderDtoStubStatic,
+  orderId: faker.string.uuid(),
   filled: getRandomAmount(100),
   price: getRandomAmount(100),
   datetime: new Date(date.setMonth(date.getMonth() - 1)),
 };
 export const updateOrderStubStatic = OrderStub(
-  _user.id,
+  userId,
   updateOrderDtoStubStatic,
 );
 

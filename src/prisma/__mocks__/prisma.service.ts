@@ -22,11 +22,4 @@ export const PrismaService = jest.fn().mockReturnValue({
       return accessKeyStubStatic;
     }),
   },
-  // order: {
-  //   create: jest.fn().mockImplementation(() => orderStubStatic),
-  //   findFirst: jest.fn().mockImplementation(() => orderStubStatic),
-  //   findMany: jest.fn().mockImplementation(() => orderStubs),
-  //   count: jest.fn().mockImplementation(() => orderStubs.length),
-  //   update: jest.fn().mockImplementation(() => updateOrderStubStatic),
-  // },
 });
