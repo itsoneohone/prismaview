@@ -34,4 +34,5 @@ lerna-debug.log*
 /data/*
 
 # Dependencies
+node_modules
 node_modules/
