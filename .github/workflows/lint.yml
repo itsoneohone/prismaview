@@ -1,0 +1,38 @@
+name: Turbo Lint API
+
+on:
+  push:
+    paths:
+      - "apps/api/**"
+      - "turbo.json"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/lint.yml"
+  pull_request:
+    paths:
+      - "apps/api/**"
+      - "turbo.json"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/lint.yml"
+
+jobs:
+  lint:
+    name: Turbo Lint app/api
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - run: pnpm install
+
+      - run: pnpm turbo run lint:check --filter=./apps/api
