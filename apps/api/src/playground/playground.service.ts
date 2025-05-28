@@ -127,12 +127,12 @@ export class PlaygroundService {
   }
 
   paginate2() {
-    const limit = 10;
-    const people = [];
-    let totalCount: number;
-    let offset = 0;
+    // const limit = 10;
+    // const people = [];
+    // let totalCount: number;
+    // const offset = 0;
     let page = 1;
-    let hasMore = false;
+    // const hasMore = false;
 
     this.logger.debug('[START] Fetch StarWars characters');
 
@@ -292,7 +292,7 @@ export class PlaygroundService {
 
     const start = new Date(2017, 1, 1).getTime() / 1000;
     const end = new Date(2021, 2, 1).getTime() / 1000;
-    const since = undefined;
+    // const since = undefined;
     console.log({
       startDate: new Date(start).toISOString(),
       start,
@@ -301,7 +301,7 @@ export class PlaygroundService {
     });
     const symbol = 'BTC/USDT';
     const limit = 10;
-    const offset = 1;
+    // const offset = 1;
     // const orders = await this.bitstampExchange.privatePostUserTransactions({
     //   limit,
     //   offset,

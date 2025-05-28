@@ -20,9 +20,14 @@
     "resolveJsonModule": true,
     "paths": {
       "@/*": ["./src/*"],
+      "@access-key/*": ["src/access-key/*"],
+      "@auth/*": ["src/auth/*"],
       "@lib/*": ["src/lib/*"],
       "@order/*": ["src/order/*"],
-      "@shared/*": ["src/shared/*"]
+      "@prismaModule/*": ["src/prisma/*"],
+      "@scheduler/*": ["src/scheduler/*"],
+      "@shared/*": ["src/shared/*"],
+      "@user/*": ["src/user/*"]
     }
   }
 }

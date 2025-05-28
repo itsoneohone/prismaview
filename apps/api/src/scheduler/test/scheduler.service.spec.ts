@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
-import { SchedulerService } from '../scheduler.service';
-import { PrismaService } from '../../prisma/prisma.service';
+import { SchedulerService } from '@scheduler/scheduler.service';
+import { PrismaService } from '@prismaModule/prisma.service';
 import { ConfigModule } from '@nestjs/config';
 
 jest.mock('../../prisma/prisma.service.ts');
@@ -19,6 +19,7 @@ describe.only('SchedulerService', () => {
   });
 
   it('bootstrap', () => {
+    expect(prisma).toBeDefined();
     expect(service).toBeDefined();
   });
 
@@ -28,7 +29,7 @@ describe.only('SchedulerService', () => {
     });
 
     it('should fetch open, high, low, close prices and volume', () => {
-      expect(true).toBeTruthy;
+      expect(true).toBeTruthy();
     });
   });
 });

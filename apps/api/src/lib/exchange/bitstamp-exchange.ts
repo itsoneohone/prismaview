@@ -1,9 +1,9 @@
 import { ForbiddenException } from '@nestjs/common';
 import { ExchangeNameEnum } from '@prisma/client';
 import { bitstamp } from 'ccxt';
-import { GetExchangeDto } from 'src/lib/exchange/dto';
-import { BaseExchange } from 'src/lib/exchange/exchange.base';
-import { FetchDirection } from '@/shared/constants/price';
+import { GetExchangeDto } from '@lib/exchange/dto';
+import { BaseExchange } from '@lib/exchange/exchange.base';
+import { FetchDirection } from '@shared/constants/price';
 
 export class BitstampExchange extends BaseExchange {
   declare public exchange: bitstamp;
@@ -32,7 +32,7 @@ export class BitstampExchange extends BaseExchange {
 
   async validateCredentials() {
     try {
-      const res = await this.exchange.privatePostWebsocketsToken();
+      await this.exchange.privatePostWebsocketsToken();
       return true;
     } catch (err) {
       if (err.name === 'AuthenticationError') {

@@ -1,8 +1,8 @@
 import { Logger } from '@nestjs/common';
 import { ExchangeNameEnum } from '@prisma/client';
 import { Observable } from 'rxjs';
-import { GetExchangeDto } from 'src/lib/exchange/dto';
-import { FetchDirection } from '@/shared/constants/price';
+import { GetExchangeDto } from '@lib/exchange/dto';
+import { FetchDirection } from '@shared/constants/price';
 
 export enum SyncMode {
   ALL = 'ALL',
@@ -71,7 +71,8 @@ export class BaseExchange {
     }, {});
   }
 
-  syncOrders(startDateObj: Date, endDateObj: Date): Observable<any> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  syncOrders(_startDateObj: Date, _endDateObj: Date): Observable<any> {
     throw new Error('The child class must implement the fn "syncOrders()",');
   }
 

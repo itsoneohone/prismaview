@@ -11,16 +11,13 @@ import {
   CreateOrderDto,
   UpdateOrderDto,
   OrderDtoMappers,
-} from '@/order/dto';
-import { PaginateDto, PaginateResultDto } from 'src/shared/dto';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { AccessKey, Order, Prisma } from '@prisma/client';
-import {
-  SEARCH_LIMIT,
-  preparePaginateResultDto,
-} from 'src/shared/utils/search';
-import { SyncMode } from 'src/lib/exchange/exchange.base';
-import { getCryptoExchange } from '@/lib/exchange/shared/utils';
+} from '@order/dto';
+import { PaginateDto, PaginateResultDto } from '@shared/dto';
+import { PrismaService } from '@prismaModule/prisma.service';
+import { AccessKey, Order } from '@prisma/client';
+import { SEARCH_LIMIT, preparePaginateResultDto } from '@shared/utils/search';
+import { SyncMode } from '@lib/exchange/exchange.base';
+import { getCryptoExchange } from '@lib/exchange/shared/utils';
 
 @Injectable()
 export class OrderService {

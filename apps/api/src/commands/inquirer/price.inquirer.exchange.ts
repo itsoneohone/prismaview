@@ -1,5 +1,5 @@
 import { ExchangeNameEnum } from '@prisma/client';
-import { DefaultFor, Question, QuestionSet } from 'nest-commander';
+import { Question, QuestionSet } from 'nest-commander';
 
 export const QUESTIONS_EXCHANGE = 'questions-exchange';
 @QuestionSet({ name: QUESTIONS_EXCHANGE })

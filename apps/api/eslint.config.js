@@ -9,7 +9,7 @@ import eslintPluginPrettier from 'eslint-plugin-prettier/recommended';
 export default tseslint.config(
   eslint.configs.recommended,
   tseslint.configs.recommended,
-  // eslint-plugin-prettier comes with the eslint-plugin-prettier/recommended config that sets up 
+  // eslint-plugin-prettier comes with the eslint-plugin-prettier/recommended config that sets up
   // both eslint-plugin-prettier and eslint-config-prettier in one go.
   eslintPluginPrettier,
   {

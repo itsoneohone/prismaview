@@ -1,19 +1,18 @@
 import * as pactum from 'pactum';
-import { faker } from '@faker-js/faker';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Test } from '@nestjs/testing';
 import { RedisClientType } from 'redis';
 import { HttpStatus } from '@nestjs/common';
-import { Prisma, User } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { INestApplication } from '@nestjs/common';
-import { AuthDto } from 'src/auth/dto';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { AuthDto } from '@auth/dto';
+import { PrismaService } from '@prismaModule/prisma.service';
 import { appMetadata } from 'src/app.module';
 import { APP_PORT, setupPipes } from 'src/app-config/app-config';
-import { CreateAccessKeyDtoStub } from 'src/access-key/stubs';
-import { CreateOrderDtoStub, OrderStub } from 'src/order/stubs';
-import { getRandomAmount } from 'src/shared/utils/amounts';
-import { AccessKeyService } from 'src/access-key/access-key.service';
+import { CreateAccessKeyDtoStub } from '@access-key/stubs';
+import { CreateOrderDtoStub, OrderStub } from '@order/stubs';
+import { getRandomAmount } from '@shared/utils/amounts';
+import { AccessKeyService } from '@access-key/access-key.service';
 import {
   calculateOrderAmounts,
   getTickerSymbols,
@@ -62,7 +61,6 @@ describe('App e2e', () => {
     });
   });
 
-  let user: User;
   describe('Auth', () => {
     const dto: AuthDto = {
       email: 'bsoug2@mailinator.com',

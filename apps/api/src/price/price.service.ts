@@ -166,7 +166,7 @@ export class PriceService {
     const bitstampMarkets = this.bitstampExchange.exchange.markets;
     // Get the BTC market for the given ticker symbol
     // Check both `BTC/{tickerSymbol}` and `{tickerSymbol}/BTC` against the supported markets
-    let btcMarkets = [
+    const btcMarkets = [
       createPair(tickerSymbol, TickerSymbol.BTC),
       createPair(TickerSymbol.BTC, tickerSymbol),
     ];
@@ -458,7 +458,7 @@ export class PriceService {
       [bitstampCryptoExchange.getName()]: [],
     };
     let tickerSymbolFiatMarkets = [];
-    let unsupportedBtcMarkets = [];
+    const unsupportedBtcMarkets = [];
     let unsupportedMarkets = [];
 
     // For each quote ticker symbol find a valid BTC in Binance or Bitstamp
@@ -783,7 +783,9 @@ export class PriceService {
 
     // If no valid date has been provided, set the starting date to now.
     const startingDate = parseDate(startingDateString);
-    let startTs = startingDate ? startingDate.getTime() : new Date().getTime();
+    const startTs = startingDate
+      ? startingDate.getTime()
+      : new Date().getTime();
     ({ start, end } = calculateOhlcvTimeRange(startTs, fetchLimit, direction));
 
     while (true) {
@@ -882,7 +884,7 @@ export class PriceService {
     direction?: FetchDirection,
     targetPages?: number,
   ) {
-    let cryptoExchange: CryptoExchange = await this._findExchangeForMarket(
+    const cryptoExchange: CryptoExchange = await this._findExchangeForMarket(
       market,
       exchangeName,
     );
@@ -907,7 +909,7 @@ export class PriceService {
     this.logger.log(logWithTraceID(logMsg, logTraceID));
   }
 
-  async cmdFetchPrices(exchange?: ExchangeNameEnum, market?: string) {
+  async cmdFetchPrices() {
     await this.findTickerSymbolToMarkets();
   }
 }

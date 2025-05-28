@@ -1,10 +1,5 @@
-import { accessKeyStubStatic, accessKeyStubs } from 'src/access-key/stubs';
-import { userStubStatic } from '../../user/stubs';
-import {
-  orderStubStatic,
-  orderStubs,
-  updateOrderStubStatic,
-} from 'src/order/stubs';
+import { accessKeyStubStatic, accessKeyStubs } from '@access-key/stubs';
+import { userStubStatic } from '@user/stubs';
 
 export const PrismaService = jest.fn().mockReturnValue({
   user: {

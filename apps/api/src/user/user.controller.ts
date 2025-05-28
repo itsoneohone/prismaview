@@ -1,7 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
-import { UserService } from './user.service';
-import { AdminRoute, PublicRoute } from '../auth/decorators';
-import { GetUserFromJwt } from 'src/auth/decorators';
+import { UserService } from '@/user/user.service';
+import { AdminRoute, GetUserFromJwt } from '@/auth/decorators';
 
 @Controller('user')
 export class UserController {

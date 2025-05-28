@@ -1,18 +1,15 @@
 import { ConfigModule } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
-import { AccessKeyService } from 'src/access-key/access-key.service';
-import { CreateAccessKeyDto } from 'src/access-key/dto';
+import { AccessKeyService } from '@access-key/access-key.service';
+import { CreateAccessKeyDto } from '@access-key/dto';
 import {
   accessKeyStubStatic,
   createAccessKeyDtoStubStatic,
-} from 'src/access-key/stubs';
-import { PaginateDto, PaginateResultDto } from 'src/shared/dto';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { userStubStatic } from 'src/user/stubs';
-import {
-  SEARCH_LIMIT,
-  preparePaginateResultDto,
-} from 'src/shared/utils/search';
+} from '@access-key/stubs';
+import { PaginateDto, PaginateResultDto } from '@shared/dto';
+import { PrismaService } from '@prismaModule/prisma.service';
+import { userStubStatic } from '@user/stubs';
+import { SEARCH_LIMIT, preparePaginateResultDto } from '@shared/utils/search';
 
 jest.mock('../../prisma/prisma.service.ts');
 
@@ -33,7 +30,7 @@ describe('AccessKeyService', () => {
   });
 
   it('bootstrap', () => {
-    expect(service).toBeDefined;
+    expect(service).toBeDefined();
   });
 
   describe('createApiKey()', () => {
@@ -51,7 +48,7 @@ describe('AccessKeyService', () => {
     });
 
     afterAll(() => {
-      jest.restoreAllMocks();
+      validateApiCredentialsSpy.mockRestore();
     });
 
     it('should call prismaService.accessKeys.create()', () => {
@@ -72,7 +69,6 @@ describe('AccessKeyService', () => {
   describe('getApiKeys()', () => {
     let accessKeysRes: PaginateResultDto;
     let accessKeys;
-    let expectedAccessKeysRes: PaginateResultDto;
 
     describe('when called without a PaginateDto', () => {
       const paginateDto: PaginateDto = {
@@ -85,11 +81,7 @@ describe('AccessKeyService', () => {
         accessKeys = accessKeysRes.data;
 
         // Fn getApiKeys is expected to return the following result
-        expectedAccessKeysRes = preparePaginateResultDto(
-          accessKeys,
-          accessKeys.length,
-          paginateDto,
-        );
+        preparePaginateResultDto(accessKeys, accessKeys.length, paginateDto);
       });
 
       it('should call prismaService.accessKeys.findMany()', () => {
@@ -139,11 +131,7 @@ describe('AccessKeyService', () => {
         accessKeysRes = await service.getApiKeys(user.id, paginateDto);
         accessKeys = accessKeysRes.data;
         // Fn getApiKeys is expected to return the following result
-        expectedAccessKeysRes = preparePaginateResultDto(
-          accessKeys,
-          accessKeys.length,
-          paginateDto,
-        );
+        preparePaginateResultDto(accessKeys, accessKeys.length, paginateDto);
       });
 
       it('should call prismaService.accessKeys.findMany()', () => {

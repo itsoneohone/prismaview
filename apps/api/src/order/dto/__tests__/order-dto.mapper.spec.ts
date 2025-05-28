@@ -1,12 +1,12 @@
-import { DECIMAL_ROUNDING, getRandomAmount } from '@/shared/utils/amounts';
-import { toCreateOrderDbDto, toUpdateOrderDbDto } from '@/order/dto';
+import { DECIMAL_ROUNDING, getRandomAmount } from '@shared/utils/amounts';
+import { toCreateOrderDbDto, toUpdateOrderDbDto } from '@order/dto';
 import {
   createOrderDtoStubStatic,
   orderStubStatic,
   updateOrderDtoStubStatic,
   updateOrderStubStatic,
   userId,
-} from '@/order/stubs';
+} from '@order/stubs';
 
 describe('toCreateOrderDbDto', () => {
   it('should convert a CreateOrderDto to CreateOrderDbDto', () => {
@@ -143,16 +143,17 @@ describe('toUpdateOrderDbDto', () => {
     delete updateOrderDto.price;
     updatedOrderData = toUpdateOrderDbDto(updateOrderDto, updateOrder);
 
-    expect(updatedOrderData.price).toBeUndefined;
-    expect(updatedOrderData.filled).toBeUndefined;
-    expect(updatedOrderData.cost).toBeUndefined;
+    expect(updatedOrderData.price).toBeUndefined();
+    expect(updatedOrderData.filled).toBeUndefined();
+    expect(updatedOrderData.cost).toBeUndefined();
   });
 
   it('do not update the "timestamp" fields when NO new "datetime" value is provided', async () => {
     delete updateOrderDto.datetime;
+    delete updateOrderDto.timestamp;
     updatedOrderData = toUpdateOrderDbDto(updateOrderDto, updateOrder);
 
-    expect(updatedOrderData.datetime).toBeUndefined;
-    expect(updatedOrderData.timestamp).toBeUndefined;
+    expect(updatedOrderData.datetime).toBeUndefined();
+    expect(updatedOrderData.timestamp).toBeUndefined();
   });
 });

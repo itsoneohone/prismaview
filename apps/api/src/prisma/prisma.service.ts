@@ -5,7 +5,7 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { ENABLE_DB_LOGGING } from 'src/app-config/app-config';
 import { LogDefinition } from 'src/prisma/types';
 
@@ -37,16 +37,10 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
     await this.$connect();
 
     if (ENABLE_DB_LOGGING) {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      this.$on('query', async (e) => {
+      (this.$on as any)('query', async (e: Prisma.QueryEvent) => {
         this.logger.debug('$on.query');
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
         this.logger.log(`Query: ${e.query}`);
-        // @ts-ignore
         this.logger.log('Params: ' + e.params);
-        // @ts-ignore
         this.logger.log('Duration: ' + e.duration + 'ms');
 
         this.logger.debug('---');
@@ -55,8 +49,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
   }
 
   async enableShutdownHooks(app: INestApplication): Promise<void> {
-    // @ts-ignore
-    this.$on('beforeExit', async () => {
+    (this.$on as any)('beforeExit', async () => {
       await app.close();
     });
   }

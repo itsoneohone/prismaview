@@ -21,6 +21,7 @@ export class EventsGateway {
   server: Server;
 
   @SubscribeMessage('events')
+  /* eslint-disable @typescript-eslint/no-unused-vars */
   handleFindAll(@MessageBody() data: any): Observable<WsResponse<number>> {
     return from([1, 2, 3]).pipe(
       delay(1000),
