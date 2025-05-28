@@ -7,8 +7,8 @@ import { Prisma } from '@prisma/client';
 import { INestApplication } from '@nestjs/common';
 import { AuthDto } from '@auth/dto';
 import { PrismaService } from '@prismaModule/prisma.service';
-import { appMetadata } from 'src/app.module';
-import { APP_PORT, setupPipes } from 'src/app-config/app-config';
+import { appMetadata } from '@app/app.module';
+import { setupPipes } from '@app/app.config';
 import { CreateAccessKeyDtoStub } from '@access-key/stubs';
 import { CreateOrderDtoStub, OrderStub } from '@order/stubs';
 import { getRandomAmount } from '@shared/utils/amounts';
@@ -26,6 +26,7 @@ describe('App e2e', () => {
   let config: ConfigService;
 
   beforeAll(async () => {
+    const APP_PORT = process.env.APP_PORT;
     const module = await Test.createTestingModule(appMetadata).compile();
     app = module.createNestApplication();
 

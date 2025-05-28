@@ -1,16 +1,16 @@
 import { Module, ModuleMetadata } from '@nestjs/common';
 import { CacheModule } from '@nestjs/cache-manager';
-import { AuthModule } from './auth/auth.module';
-import { PrismaModule } from './prisma/prisma.module';
-import { UserModule } from './user/user.module';
+import { AuthModule } from '@auth/auth.module';
+import { PrismaModule } from '@prismaModule/prisma.module';
+import { UserModule } from '@user/user.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { OrderModule } from './order/order.module';
+import { OrderModule } from '@order/order.module';
 import { HttpModule } from '@nestjs/axios';
-import { PriceModule } from './price/price.module';
+import { PriceModule } from '@price/price.module';
 import { createKeyv } from '@keyv/redis';
 // import { Keyv } from '@keyv/redis';
 // import { CacheableMemory } from 'cacheable';
-import { CommandsModule } from './commands/commands.module';
+import { CommandsModule } from '@commands/commands.module';
 
 const appMetadata: ModuleMetadata = {
   imports: [

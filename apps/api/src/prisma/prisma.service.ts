@@ -6,14 +6,17 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Prisma, PrismaClient } from '@prisma/client';
-import { ENABLE_DB_LOGGING } from 'src/app-config/app-config';
 import { LogDefinition } from 'src/prisma/types';
+import { parseBoolean } from '@shared/utils/parser';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit {
   private logger = new Logger(PrismaService.name);
+  private static readonly enableDbLogging = parseBoolean(
+    process.env.ENABLE_DB_LOGGING,
+  );
   constructor(config: ConfigService) {
-    const loggingConfig: Array<LogDefinition> = ENABLE_DB_LOGGING
+    const loggingConfig: Array<LogDefinition> = PrismaService.enableDbLogging
       ? [
           { emit: 'event', level: 'query' },
           { emit: 'stdout', level: 'info' },
@@ -36,7 +39,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
   async onModuleInit(): Promise<void> {
     await this.$connect();
 
-    if (ENABLE_DB_LOGGING) {
+    if (PrismaService.enableDbLogging) {
       (this.$on as any)('query', async (e: Prisma.QueryEvent) => {
         this.logger.debug('$on.query');
         this.logger.log(`Query: ${e.query}`);
