@@ -11,7 +11,12 @@ import {
  * Create a NestJs Express application
  */
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    logger:
+      process.env.NODE_ENV === 'production'
+        ? ['error', 'warn', 'log']
+        : ['error', 'warn', 'log', 'verbose', 'debug'],
+  });
 
   // Set up the session middleware
   // await setupSession(app);

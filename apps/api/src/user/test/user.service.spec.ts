@@ -1,12 +1,12 @@
 import { Test } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
-import { UserService } from 'src/user/user.service';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { UserService } from '@user/user.service';
+import { PrismaService } from '@prismaModule/prisma.service';
 import {
   CreateUserSettingsDtoStub,
   createUserDtoStubStatic,
   userStubStatic,
-} from 'src/user/stubs';
+} from '@user/stubs';
 
 jest.mock('../../prisma/prisma.service.ts');
 
@@ -39,7 +39,7 @@ describe('UserService', () => {
   });
 
   it('bootstrap', () => {
-    expect(service).toBeDefined;
+    expect(service).toBeDefined();
   });
 
   describe('getMeTest()', () => {

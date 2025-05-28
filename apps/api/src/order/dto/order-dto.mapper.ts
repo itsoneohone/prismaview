@@ -3,8 +3,8 @@ import {
   CreateOrderDto,
   UpdateOrderDto,
   UpdateOrderDbDto,
-} from '@/order/dto';
-import { calculateOrderAmounts, getTickerSymbols } from '@/order/common/utils';
+} from '@order/dto';
+import { calculateOrderAmounts, getTickerSymbols } from '@order/common/utils';
 import {
   Order,
   OrderStatusEnum,

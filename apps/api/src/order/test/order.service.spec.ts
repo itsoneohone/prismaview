@@ -1,10 +1,10 @@
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
-import { PaginateDto } from '@/shared/dto';
-import { SEARCH_LIMIT } from '@/shared/utils/search';
-import { CreateOrderDto, UpdateOrderDto, OrderDtoMappers } from '@/order/dto';
-import { OrderService } from '@/order/order.service';
+import { PaginateDto } from '@shared/dto';
+import { SEARCH_LIMIT } from '@shared/utils/search';
+import { CreateOrderDto, UpdateOrderDto, OrderDtoMappers } from '@order/dto';
+import { OrderService } from '@order/order.service';
 import {
   createOrderDtoStubStatic,
   orderStubs,
@@ -12,8 +12,8 @@ import {
   updateOrderDtoStubStatic,
   updateOrderStubStatic,
   userId,
-} from '@/order/stubs';
-import { PrismaService } from 'src/prisma/prisma.service';
+} from '@order/stubs';
+import { PrismaService } from '@prismaModule/prisma.service';
 import { PrismaClient } from '@prisma/client';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 
@@ -72,7 +72,6 @@ describe('OrderService', () => {
       const updateOrderDtoStub: UpdateOrderDto = updateOrderDtoStubStatic;
       const updatedOrderStub = updateOrderStubStatic;
       let order;
-      let updatedOrder;
       let getOrderByIdSpy;
       let toUpdateOrderDbDtoSpy;
 
@@ -98,22 +97,14 @@ describe('OrderService', () => {
       });
 
       it('should call service._getOrderById()', async () => {
-        updatedOrder = await service.updateOrderById(
-          userId,
-          order.id,
-          updateOrderDtoStub,
-        );
+        await service.updateOrderById(userId, order.id, updateOrderDtoStub);
 
-        expect(service._getOrderById).toHaveBeenCalled;
+        expect(service._getOrderById).toHaveBeenCalled();
         expect(service._getOrderById).toHaveBeenCalledWith(userId, order.id);
       });
 
       it('should call toUpdateOrderDbDto()', async () => {
-        updatedOrder = await service.updateOrderById(
-          userId,
-          order.id,
-          updateOrderDtoStub,
-        );
+        await service.updateOrderById(userId, order.id, updateOrderDtoStub);
 
         expect(OrderDtoMappers.toUpdateOrderDbDto).toHaveBeenCalled();
         expect(OrderDtoMappers.toUpdateOrderDbDto).toHaveBeenCalledWith(
@@ -123,11 +114,7 @@ describe('OrderService', () => {
       });
 
       it('should call prisma.order.update()', async () => {
-        updatedOrder = await service.updateOrderById(
-          userId,
-          order.id,
-          updateOrderDtoStub,
-        );
+        await service.updateOrderById(userId, order.id, updateOrderDtoStub);
 
         expect(prisma.order.update).toHaveBeenCalled();
         expect(prisma.order.update).toHaveBeenCalledWith({

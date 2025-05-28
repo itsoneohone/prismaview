@@ -1,19 +1,10 @@
 import { ForbiddenException } from '@nestjs/common';
 import { ExchangeNameEnum } from '@prisma/client';
 import { binance } from 'ccxt';
-import {
-  EMPTY,
-  Observable,
-  catchError,
-  delay,
-  expand,
-  from,
-  reduce,
-  tap,
-} from 'rxjs';
-import { GetExchangeDto } from 'src/lib/exchange/dto';
-import { BaseExchange } from 'src/lib/exchange/exchange.base';
-import { FetchDirection } from '@/shared/constants/price';
+import { Observable } from 'rxjs';
+import { GetExchangeDto } from '@lib/exchange/dto';
+import { BaseExchange } from '@lib/exchange/exchange.base';
+import { FetchDirection } from '@shared/constants/price';
 
 export class BinanceExchange extends BaseExchange {
   declare public exchange: binance;
@@ -44,7 +35,7 @@ export class BinanceExchange extends BaseExchange {
    */
   async validateCredentials() {
     try {
-      const res = await this.exchange.fetchStatus();
+      await this.exchange.fetchStatus();
 
       return true;
     } catch (err) {
@@ -66,7 +57,7 @@ export class BinanceExchange extends BaseExchange {
       // It should throw an error
       // Actually the most strict API key permission in Binance (read-only), allows reading the balance of the user.
       // @todo: Pick another fn that is not allowed with read-only permissions.
-      const res = await this.exchange.fetchBalance();
+      await this.exchange.fetchBalance();
 
       // These credentials should not be accepted
       return false;
@@ -79,9 +70,10 @@ export class BinanceExchange extends BaseExchange {
   }
 
   private _fetchClosedOrders(
-    startDateObj: Date,
-    endDateObj: Date,
-    ofs: number,
+    /* eslint-disable @typescript-eslint/no-unused-vars */
+    _startDateObj: Date,
+    _endDateObj: Date,
+    _ofs: number,
   ) {
     throw new Error(`Implementation missing`);
   }
@@ -89,7 +81,8 @@ export class BinanceExchange extends BaseExchange {
   /**
    * Sync the orders of a user with his exchange account
    */
-  syncOrders(startDateObj: Date, endDateObj: Date): Observable<any> {
+  /* eslint-disable @typescript-eslint/no-unused-vars */
+  syncOrders(_startDateObj: Date, _endDateObj: Date): Observable<any> {
     throw new Error(`Implementation missing`);
   }
 }

@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { AccessKey, User } from '@prisma/client';
 import { Request } from 'express';
-import { Observable, first, from, map } from 'rxjs';
+import { Observable, from, map } from 'rxjs';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
@@ -42,8 +42,7 @@ export class AccessKeyOwnerGuard implements CanActivate {
           throw new UnauthorizedException('Invalid access key');
         }
 
-        // @ts-ignore
-        request.accessKey = targetAccessKey;
+        (request as any).accessKey = targetAccessKey;
 
         return true;
       }),

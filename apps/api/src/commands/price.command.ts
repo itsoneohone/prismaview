@@ -1,5 +1,4 @@
 import { Logger } from '@nestjs/common';
-import { ExchangeNameEnum } from '@prisma/client';
 import {
   Command,
   CommandRunner,
@@ -88,7 +87,8 @@ export class PriceCommand extends CommandRunner {
       this.logger.log(options);
 
       let task = inputs[0];
-      let { exchange, market, start, limit, direction, targetPages } = options;
+      const { market, limit, direction, targetPages } = options;
+      let { exchange, start } = options;
 
       if (!task) {
         task = (

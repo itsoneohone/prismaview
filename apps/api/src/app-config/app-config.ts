@@ -90,12 +90,11 @@ export function setupHandlebars(app: NestExpressApplication) {
  * Monkey patch the BigInt serialization as per the MDN recommendation (https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/BigInt#use_within_json)
  * The solution is described here: https://github.com/GoogleChromeLabs/jsbi/issues/30#issuecomment-1006088574
  */
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export interface BigInt {
   /** Convert to BigInt to string form in JSON.stringify */
   toJSON: () => string;
 }
-// @ts-ignore
+// @ts-expect-error "Extend BigInt prototype to allow serialization"
 BigInt.prototype.toJSON = function () {
   return this.toString();
 };

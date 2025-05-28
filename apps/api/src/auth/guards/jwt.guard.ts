@@ -31,6 +31,7 @@ export class JwtGuard extends AuthGuard('jwt') implements CanActivate {
 
     // The AuthGuard('jwt') will run the jwt strategy to extract the Bearer token, validate the user and add the user to the request.
     return from(Promise.resolve(super.canActivate(context))).pipe(
+      /* eslint-disable @typescript-eslint/no-unused-vars */
       map((result: any) => {
         // Allow access only to admins
         const isAdminRoute = this.reflector.getAllAndOverride<string>(

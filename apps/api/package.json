@@ -116,9 +116,14 @@
     ],
     "moduleNameMapper": {
       "@/(.*)": "<rootDir>/src/$1",
+      "@access-key/(.*)": "<rootDir>/src/access-key/$1",
+      "@auth/(.*)": "<rootDir>/src/auth/$1",
       "@lib/(.*)": "<rootDir>/src/lib/$1",
       "@order/(.*)": "<rootDir>/src/order/$1",
-      "@shared/(.*)": "<rootDir>/src/shared/$1"
+      "@prismaModule/(.*)": "<rootDir>/src/prisma/$1",
+      "@scheduler/(.*)": "<rootDir>/src/scheduler/$1",
+      "@shared/(.*)": "<rootDir>/src/shared/$1",
+      "@user/(.*)": "<rootDir>/src/user/$1"
     },
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {

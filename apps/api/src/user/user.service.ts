@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { CreateUserDto } from 'src/user/dto';
-import { UserSettingName } from 'src/user/common/constants';
+import { PrismaService } from '@/prisma/prisma.service';
+import { CreateUserDto } from '@/user/dto';
+import { UserSettingName } from '@/user/common/constants';
 import { FiatCurrency } from '@/shared/constants/currency';
 
 @Injectable()
