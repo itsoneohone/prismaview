@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '@app/app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { setupPipes, setupHandlebars } from '@app/app.config';
+import { setupPipes, setupHandlebars, setupMorgan } from '@app/app.config';
 
 /**
  * Create a NestJs Express application
@@ -16,6 +16,9 @@ async function bootstrap() {
 
   // Set up the session middleware
   // await setupSession(app);
+
+  // Set up HTTP request logging
+  setupMorgan(app);
 
   // Set up pipes
   setupPipes(app);
