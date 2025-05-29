@@ -1,4 +1,5 @@
 import { join } from 'path';
+import * as morgan from 'morgan';
 import * as session from 'express-session';
 import { createClient } from 'redis';
 import { RedisStore } from 'connect-redis';
@@ -11,6 +12,20 @@ import { ConfigService } from '@nestjs/config';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import * as hbs from 'hbs';
 import { ValidationError } from 'class-validator';
+import type { Request } from 'express';
+
+/**
+ * Set up Morgan HTTP request logging
+ *
+ * @param app NestExpressApplication
+ */
+export function setupMorgan(app: NestExpressApplication) {
+  app.use(
+    morgan('dev', {
+      skip: (req: Request) => req.path === '/status',
+    }),
+  );
+}
 
 /**
  * Setup session middleware with persistent sessions in Redis
