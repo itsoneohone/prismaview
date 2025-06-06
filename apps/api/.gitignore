@@ -9,3 +9,7 @@ coverage/
 # Env vars
 .env
 .env.test
+
+# Docker volume DB data
+data/
+data/*
