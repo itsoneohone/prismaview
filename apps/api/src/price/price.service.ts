@@ -147,11 +147,11 @@ export class PriceService {
   /**
    * Find a BTC market for a given ticker symbol in any of the available exchanges.
    *
-   * *If a BTC market is not available in any of the available exchanges, the market is marked as
+   * If a BTC market is not available in any of the available exchanges, the market is marked as
    * 'unsupportedBtcMarket'. Currently there are not unsupported BTC markets, and so this list is not
    * being processed.
    *
-   * *The available exchanges are currently Binance and Bitstamp. Kraken is not used in this case, because it
+   * The available exchanges are currently Binance and Bitstamp. Kraken is not used in this case, because it
    * only offers the last 720 data points for the interval in use
    * [https://docs.kraken.com/rest/#tag/Spot-Market-Data/operation/getOHLCData]).
    *
@@ -225,7 +225,7 @@ export class PriceService {
       if (isFiat(tickerSymbol)) {
         tickerSymbolFiatMarkets.push(pair);
       } else {
-        // This is a crypto ticker symbol, check it against the supported markets
+        // This is either an unsupported  a crypto ticker symbol, check it against the supported markets
         if (bitstampMarkets[pair]) {
           bitstampTickerSymbolCryptoMarkets.push(pair);
         } else if (binanceMarkets[pair]) {

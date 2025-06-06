@@ -1,0 +1,46 @@
+services:
+  dev-db:
+    image: postgres:16.0
+    restart: always
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: '${POSTGRES_USER}'
+      POSTGRES_PASSWORD: '${POSTGRES_PASSWORD}'
+      POSTGRES_DB: '${POSTGRES_DB}'
+    ports:
+      - '${POSTGRES_APP_PORT_HOST}:${POSTGRES_PORT_CONTAINER}'
+    volumes:
+      - ./data/pg:/var/lib/postgresql/data
+  test-db:
+    image: postgres:16.0
+    restart: always
+    env_file:
+      - .env
+    environment:
+      POSTGRES_USER: '${POSTGRES_USER}'
+      POSTGRES_PASSWORD: '${POSTGRES_PASSWORD}'
+      POSTGRES_DB: '${POSTGRES_DB}'
+    ports:
+      - '${POSTGRES_TEST_PORT_HOST}:${POSTGRES_PORT_CONTAINER}'
+    volumes:
+      - ./data/pg-test:/var/lib/postgresql/data
+  redis:
+    image: redis:7
+    env_file:
+      - .env
+    ports:
+      - '${REDIS_PORT_HOST}:${REDIS_PORT_CONTAINER}'
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    env_file:
+      - .env
+    environment:
+      - REDIS_HOSTS=${REDIS_HOSTS}
+    ports:
+      - '${REDIS_COMMANDER_PORT_HOST}:${REDIS_COMMANDER_PORT_CONTAINER}'
+volumes:
+  dev-db:
+    external: true
+  test-db:
+    external: true

@@ -29,10 +29,6 @@ lerna-debug.log*
 # Turborepo
 .turbo
 
-# Docker volume DB data
-/data
-/data/*
-
 # Dependencies
 node_modules
 node_modules/
