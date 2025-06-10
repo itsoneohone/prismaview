@@ -1,46 +1,89 @@
 services:
   dev-db:
-    image: postgres:16.0
+    image: postgres:16
     restart: always
     env_file:
       - .env
     environment:
-      POSTGRES_USER: '${POSTGRES_USER}'
-      POSTGRES_PASSWORD: '${POSTGRES_PASSWORD}'
-      POSTGRES_DB: '${POSTGRES_DB}'
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_SHARED_BUFFERS: "${POSTGRES_SHARED_BUFFERS}"
+      POSTGRES_EFFECTIVE_CACHE_SIZE: "${POSTGRES_EFFECTIVE_CACHE_SIZE}"
+      POSTGRES_MAINTENANCE_WORK_MEM: "${POSTGRES_MAINTENANCE_WORK_MEM}"
+      POSTGRES_WORK_MEM: "${POSTGRES_WORK_MEM}"
     ports:
-      - '${POSTGRES_APP_PORT_HOST}:${POSTGRES_PORT_CONTAINER}'
+      - "${POSTGRES_APP_PORT_HOST}:5432"
     volumes:
       - ./data/pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   test-db:
-    image: postgres:16.0
+    image: postgres:16
     restart: always
     env_file:
       - .env
     environment:
-      POSTGRES_USER: '${POSTGRES_USER}'
-      POSTGRES_PASSWORD: '${POSTGRES_PASSWORD}'
-      POSTGRES_DB: '${POSTGRES_DB}'
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_SHARED_BUFFERS: "${POSTGRES_SHARED_BUFFERS}"
+      POSTGRES_EFFECTIVE_CACHE_SIZE: "${POSTGRES_EFFECTIVE_CACHE_SIZE}"
+      POSTGRES_MAINTENANCE_WORK_MEM: "${POSTGRES_MAINTENANCE_WORK_MEM}"
+      POSTGRES_WORK_MEM: "${POSTGRES_WORK_MEM}"
     ports:
-      - '${POSTGRES_TEST_PORT_HOST}:${POSTGRES_PORT_CONTAINER}'
+      - "${POSTGRES_TEST_PORT_HOST}:5432"
     volumes:
       - ./data/pg-test:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   redis:
     image: redis:7
+    restart: always
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
     env_file:
       - .env
     ports:
-      - '${REDIS_PORT_HOST}:${REDIS_PORT_CONTAINER}'
+      - "${REDIS_PORT_HOST}:6379"
+    volumes:
+      - ./data/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   redis-commander:
     image: rediscommander/redis-commander:latest
+    restart: always
+    environment:
+      - REDIS_HOSTS=${REDIS_HOSTS}
+      - HTTP_USER=${REDIS_COMMANDER_USER}
+      - HTTP_PASSWORD=${REDIS_COMMANDER_PASSWORD}
+    ports:
+      - "${REDIS_COMMANDER_PORT_HOST}:8081"
+  rabbitmq:
+    image: rabbitmq:management
+    restart: always
     env_file:
       - .env
     environment:
-      - REDIS_HOSTS=${REDIS_HOSTS}
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+      - RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS=-rabbitmq_prometheus internal true
     ports:
-      - '${REDIS_COMMANDER_PORT_HOST}:${REDIS_COMMANDER_PORT_CONTAINER}'
-volumes:
-  dev-db:
-    external: true
-  test-db:
-    external: true
+      - "${RABBITMQ_PORT_HOST}:5672" # AMQP protocol port
+      - "${RABBITMQ_MANAGEMENT_PORT_HOST}:15672" # Management UI port
+      - "${RABBITMQ_PROMETHEUS_PORT_HOST}:15692" # Prometheus port
+    volumes:
+      - ./data/rabbitmq:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
