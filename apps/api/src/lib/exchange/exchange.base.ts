@@ -13,8 +13,8 @@ export enum SyncMode {
 export class BaseExchange {
   protected logger = new Logger(BaseExchange.name);
   protected name: ExchangeNameEnum;
-  // Limit the requests to the exchange - e.g. If set to 2000ms, it will allow one request every 2 secs.
   protected accessKeyId: number;
+  // Limit the requests to the exchange - e.g. If set to 2000ms, it will allow one request every 2 secs.
   // Read more on rateLimit here: https://github.com/ccxt/ccxt/wiki/Manual#rate-limit
   public readonly rateLimit: number = 2000;
   public readonly exchange;

@@ -5,7 +5,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { catchError, from, map, mergeMap, of, zip } from 'rxjs';
+import { catchError, from, map, mergeMap, of, tap, zip } from 'rxjs';
 import {
   CreateOrderDbDto,
   CreateOrderDto,
@@ -263,20 +263,26 @@ export class OrderService {
       endDate,
     );
 
-    return exchange.syncOrders(startDateObj, endDateObj).pipe(
-      // Merge allOrders with the output of the Observable that checks the existing orders
-      mergeMap((allOrders) => {
-        const allOrdersDict = {};
-        const allOrderIds = [];
-        allOrders.forEach((o) => {
-          allOrderIds.push(o.id);
-          allOrdersDict[o.id] = o;
-        });
+    this.logger.log(
+      `[START] Sync user's "#${userId}" orders from "${accessKey.exchange}"`,
+    );
 
-        return zip(
-          of(allOrdersDict),
-          from(
-            Promise.resolve(
+    return exchange
+      .syncOrders(startDateObj, endDateObj)
+      .pipe(
+        // Merge allOrders with the output of the Observable that checks the existing orders
+        mergeMap((allOrders) => {
+          this.logger.log('Fetching existing orders...');
+          const allOrdersDict = {};
+          const allOrderIds = [];
+          allOrders.forEach((o) => {
+            allOrderIds.push(o.id);
+            allOrdersDict[o.id] = o;
+          });
+
+          return zip(
+            of(allOrdersDict),
+            from(
               // Find the existing orders
               this.prisma.order.findMany({
                 select: { id: true, orderId: true },
@@ -287,65 +293,66 @@ export class OrderService {
                 },
               }),
             ),
-          ),
-        ).pipe(
-          catchError((error: any) => {
-            this.logger.error(error);
-            throw new Error(`An ${error.name} error occurred (${error})`);
-          }),
-        );
-      }),
-      mergeMap(([allOrdersDict, allOrderIds]) => {
-        // Delete from the fetched orders those that are already saved in the DB
-        const skippedOrders = [];
-        allOrderIds.forEach((order) => {
-          skippedOrders.push(order.orderId);
-          delete allOrdersDict[order.orderId];
-        });
+          );
+        }),
+        mergeMap(([allOrdersDict, allOrderIds]) => {
+          this.logger.log(
+            'Skipping existing orders and creating new orders...',
+          );
+          // Delete from the fetched orders those that are already saved in the DB
+          const skippedOrders = [];
+          allOrderIds.forEach((order) => {
+            skippedOrders.push(order.orderId);
+            delete allOrdersDict[order.orderId];
+          });
 
-        // Prepare the order DTOs;
-        const dtos: CreateOrderDbDto[] = Object.values(allOrdersDict).map(
-          (curr: any) => {
-            return OrderDtoMappers.ccxtToCreateOrderDbDto(
-              userId,
-              accessKey.id,
-              curr,
-            );
-          },
-        );
+          // Prepare the order DTOs;
+          const dtos: CreateOrderDbDto[] = Object.values(allOrdersDict).map(
+            (curr: any) => {
+              return OrderDtoMappers.ccxtToCreateOrderDbDto(
+                userId,
+                accessKey.id,
+                curr,
+              );
+            },
+          );
 
-        const response = {
-          saved: {
-            orders: Object.keys(allOrdersDict),
-            count: Object.keys(allOrdersDict).length,
-          },
-          skipped: {
-            orders: skippedOrders,
-            count: skippedOrders.length,
-          },
-        };
+          const response = {
+            saved: {
+              orders: Object.keys(allOrdersDict),
+              count: Object.keys(allOrdersDict).length,
+            },
+            skipped: {
+              orders: skippedOrders,
+              count: skippedOrders.length,
+            },
+          };
 
-        return zip(
-          of(response),
-          from(
-            Promise.resolve(
+          return zip(
+            of(response),
+            from(
               this.prisma.order.createMany({
                 data: dtos,
                 skipDuplicates: true,
               }),
             ),
+          );
+        }),
+        map(([response, createdOrders]) => {
+          response.saved.count = createdOrders.count;
+          return response;
+        }),
+        tap(() =>
+          this.logger.log(
+            `[END] Sync user's "#${userId}" orders from "${accessKey.exchange}"`,
           ),
-        ).pipe(
-          catchError((error: any) => {
-            this.logger.error(error);
-            throw new Error(`An ${error.name} error occurred (${error})`);
-          }),
-        );
-      }),
-      map(([response, createdOrders]) => {
-        response.saved.count = createdOrders.count;
-        return response;
-      }),
-    );
+        ),
+      )
+      .pipe(
+        catchError((error: any) => {
+          this.logger.error(error);
+          throw new Error(`An ${error.name} error occurred (${error})`);
+        }),
+      );
   }
 }

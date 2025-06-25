@@ -11,6 +11,7 @@ import {
   OrderTypeEnum,
   OrderSideEnum,
 } from '@prisma/client';
+
 /**
  * Converts a CreateOrderDto to CreateOrderDbDto by:
  * 1. Copying all properties from the input DTO
