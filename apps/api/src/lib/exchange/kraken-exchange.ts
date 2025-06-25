@@ -14,8 +14,8 @@ export class KrakenExchange extends BaseExchange {
   constructor(exchangeDto: GetExchangeDto) {
     super(exchangeDto);
     this.name = ExchangeNameEnum.KRAKEN;
-    // Respect the exchange's rate limits (https://docs.kraken.com/rest/#section/Rate-Limits)
-    this.rateLimit = 3000;
+    // Respect the exchange's rate limits (https://support.kraken.com/articles/206548367-what-are-the-api-rate-limits-#2)
+    this.rateLimit = 1000;
     this.fetchLimit = 720;
     this.fetchDirection = FetchDirection.DESC;
     this.exchange = new kraken({
@@ -100,78 +100,57 @@ export class KrakenExchange extends BaseExchange {
     // Default kraken API page size
     const pageSize = 50;
 
-    this.logger.debug(
-      `[START] Sync orders using key "${this.apiKey}" in "${this.name}"`,
+    this.logger.log(
+      `[START] Sync orders from "${this.name}" using key #${this.accessKeyId}`,
     );
 
     let page = 1;
     let ofs = 0;
     // Request the first page
     const paginationObs = from(
-      Promise.resolve(this._fetchClosedOrders(startDateObj, endDateObj, ofs)),
-    ).pipe(
-      catchError((error: any) => {
-        this.logger.error(error);
-        throw new Error(`An ${error.name} error occurred (${error})`);
-      }),
-      tap(() => this.logger.log(`Fetched page: ${page}, ofs: ${ofs}`)),
-      tap(() =>
-        this.logger.log(`Going to sleep for ${this.rateLimit / 1000}secs...`),
-      ),
-      // Delay the next request to respect the exchange rate limits
-      delay(this.rateLimit),
-      tap(() => this.logger.log(`Slept for ${this.rateLimit / 1000}secs`)),
-      // Use expand to recursively request the next pages
-      expand((res) => {
-        if (res.length < pageSize) {
-          return EMPTY;
-        }
+      this._fetchClosedOrders(startDateObj, endDateObj, ofs),
+    )
+      .pipe(
+        tap(() => {
+          this.logger.log(`Fetched page: ${page}, ofs: ${ofs}`);
+          this.logger.log(`Sleeping for ${this.rateLimit / 1000}secs...`);
+        }),
+        // Delay the next request to respect the exchange rate limits
+        delay(this.rateLimit),
+        // Use expand to recursively request the next pages
+        expand((res) => {
+          if (res.length < pageSize) {
+            return EMPTY;
+          }
 
-        // Adjust pagination params to fetch the next page
-        page += 1;
-        ofs += res.length;
+          // Adjust pagination params to fetch the next page
+          page += 1;
+          ofs += res.length;
 
-        return from(
-          // Use ofset pagination for a given date window
-          Promise.resolve(
+          return from(
+            // Use ofset pagination for a given date window
             this._fetchClosedOrders(startDateObj, endDateObj, ofs),
-          ),
-        ).pipe(
-          catchError((error: any) => {
-            this.logger.error(error);
-            throw new Error(`An ${error.name} error occurred (${error})`);
-          }),
-          tap(() => this.logger.log(`  - Fetched page: ${page}, ofs: ${ofs}`)),
-          tap(() =>
-            this.logger.log(
-              `About to sleep for ${this.rateLimit / 1000}secs...`,
-            ),
-          ),
-          delay(this.rateLimit),
-          tap(() => this.logger.log(`Slept for ${this.rateLimit / 1000}secs`)),
-        );
-      }),
-      tap(() => this.logger.log(`    * Processing page ${page}`)),
-      reduce((allOrders, orderPage) => {
-        const allOrdersObj = {};
-        const orderedres = [];
-        console.log('IN REDUCE: ');
-        orderPage.forEach((o) => {
-          orderedres.push({ dt: o.datetime, orderId: o.id });
-          allOrdersObj[o.id] = o;
-        });
-        console.log(
-          `Orders count: ${orderedres.length}, page: ${page}, offset: ${ofs}`,
-        );
-        console.log({ orderedres });
-        return allOrders.concat(orderPage);
-      }, []),
-      tap(() => {
-        this.logger.debug(
-          `[END] Sync orders using key "${this.apiKey}" in "${this.name}"`,
-        );
-      }),
-    );
+          ).pipe(
+            tap(() => {
+              this.logger.log(`Fetched page: ${page}, ofs: ${ofs}`);
+              this.logger.log(`Sleeping for ${this.rateLimit / 1000}secs...`);
+            }),
+            delay(this.rateLimit),
+          );
+        }),
+        reduce((allOrders, orderPage) => allOrders.concat(orderPage), []),
+        tap(() => {
+          this.logger.log(
+            `[END] Sync orders from "${this.name}" using key #${this.accessKeyId}`,
+          );
+        }),
+      )
+      .pipe(
+        catchError((error: any) => {
+          this.logger.error(error);
+          throw new Error(`An ${error.name} error occurred (${error})`);
+        }),
+      );
 
     return paginationObs;
   }
