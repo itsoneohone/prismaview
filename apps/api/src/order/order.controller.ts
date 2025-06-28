@@ -20,6 +20,7 @@ import { PaginateDto } from 'src/shared/dto';
 import { SyncMode } from 'src/lib/exchange/exchange.base';
 import { CreateOrderDto, UpdateOrderDto } from 'src/order/dto';
 import { OrderService } from 'src/order/order.service';
+import { SerializedUser } from '@user/types';
 
 @Controller('order')
 export class OrderController {
@@ -31,10 +32,10 @@ export class OrderController {
 
   @Post()
   createOrder(
-    @GetUserFromJwt('id') userId: number,
+    @GetUserFromJwt() user: SerializedUser,
     @Body() dto: CreateOrderDto,
   ) {
-    return this.orderService.createOrder(userId, dto);
+    return this.orderService.createOrder(user.id, dto);
   }
 
   @Patch(':id')
