@@ -1,21 +1,55 @@
 import { DECIMAL_ROUNDING, getRandomAmount } from '@shared/utils/amounts';
-import { toCreateOrderDbDto, toUpdateOrderDbDto } from '@order/dto';
+import {
+  ccxtToCreateOrderDbDto,
+  toCreateOrderDbDto,
+  toUpdateOrderDbDto,
+} from '@order/dto';
 import {
   createOrderDtoStubStatic,
+  ccxtOrderStatic,
   orderStubStatic,
   updateOrderDtoStubStatic,
   updateOrderStubStatic,
   userId,
 } from '@order/stubs';
+import {
+  OrderCreatedByEnum,
+  OrderSideEnum,
+  OrderStatusEnum,
+  OrderTypeEnum,
+} from '@prisma/client';
 
 describe('toCreateOrderDbDto', () => {
   it('should convert a CreateOrderDto to CreateOrderDbDto', () => {
+    const createOrderDtoFields = [
+      'base',
+      'quote',
+      'currency',
+      'cost',
+      'accessKeyId',
+      'userId',
+      'rawData',
+      'createdBy',
+      'orderId',
+      'timestamp',
+      'datetime',
+      'status',
+      'symbol',
+      'type',
+      'side',
+      'price',
+      'filled',
+      'fee',
+    ];
     const orderStub = orderStubStatic;
     const createOrderDbDto = toCreateOrderDbDto(
       userId,
       createOrderDtoStubStatic,
     );
 
+    expect(Object.keys(createOrderDbDto)).toEqual(
+      expect.arrayContaining(createOrderDtoFields),
+    );
     expect(createOrderDbDto.filled).toEqual(orderStub.filled);
     expect(createOrderDbDto.price).toEqual(orderStub.price);
     expect(createOrderDbDto.cost).toEqual(orderStub.cost);
@@ -24,6 +58,13 @@ describe('toCreateOrderDbDto', () => {
     expect(createOrderDbDto.quote).toEqual(orderStub.quote);
     expect(createOrderDbDto.datetime).toEqual(orderStub.datetime);
     expect(createOrderDbDto.timestamp).toEqual(orderStub.timestamp);
+    expect(createOrderDbDto.createdBy).toEqual(OrderCreatedByEnum.USER);
+    expect(Object.values(OrderStatusEnum)).toContain(createOrderDbDto.status);
+    expect(createOrderDbDto.status).toEqual(OrderStatusEnum.CLOSED);
+    expect(Object.values(OrderTypeEnum)).toContain(OrderTypeEnum.MARKET);
+    expect(createOrderDbDto.type).toEqual(OrderTypeEnum.MARKET);
+    expect(Object.values(OrderSideEnum)).toContain(OrderSideEnum.BUY);
+    expect(createOrderDbDto.side).toEqual(OrderSideEnum.BUY);
   });
 });
 
@@ -155,5 +196,64 @@ describe('toUpdateOrderDbDto', () => {
 
     expect(updatedOrderData.datetime).toBeUndefined();
     expect(updatedOrderData.timestamp).toBeUndefined();
+  });
+});
+
+describe('ccxtToCreateOrderDbDto', () => {
+  it('should prepare an Order dto using a ccxt order', () => {
+    const ccxtOrderFields = [
+      'orderId',
+      'timestamp',
+      'datetime',
+      'status',
+      'symbol',
+      'base',
+      'quote',
+      'currency',
+      'type',
+      'side',
+      'price',
+      'filled',
+      'cost',
+      'fee',
+      'accessKeyId',
+      'userId',
+      'createdBy',
+      'rawData',
+    ];
+    const accessKeyId = 1;
+    const ccxtOrder = ccxtOrderStatic;
+    const createOrderDbDto = ccxtToCreateOrderDbDto(
+      userId,
+      accessKeyId,
+      ccxtOrder,
+    );
+    const [base, quote] = ccxtOrder.symbol.split('/');
+    const currency = quote;
+
+    expect(Object.keys(createOrderDbDto)).toEqual(
+      expect.arrayContaining(ccxtOrderFields),
+    );
+    expect(createOrderDbDto.accessKeyId).toEqual(accessKeyId);
+    expect(createOrderDbDto.userId).toEqual(userId);
+    expect(createOrderDbDto.orderId).toEqual(ccxtOrder.id);
+    expect(Object.values(OrderStatusEnum)).toContain(createOrderDbDto.status);
+    expect(createOrderDbDto.status).toEqual(OrderStatusEnum.CLOSED);
+    expect(Object.values(OrderTypeEnum)).toContain(createOrderDbDto.type);
+    expect(createOrderDbDto.type).toEqual(OrderTypeEnum.LIMIT);
+    expect(Object.values(OrderSideEnum)).toContain(createOrderDbDto.side);
+    expect(createOrderDbDto.side).toEqual(OrderSideEnum.BUY);
+    expect(createOrderDbDto.filled).toEqual(ccxtOrder.filled);
+    expect(createOrderDbDto.price).toEqual(ccxtOrder.price);
+    expect(createOrderDbDto.cost).toEqual(ccxtOrder.cost);
+    expect(createOrderDbDto.fee).toEqual(ccxtOrder.fee.cost);
+    expect(createOrderDbDto.symbol).toEqual(ccxtOrder.symbol);
+    expect(createOrderDbDto.base).toEqual(base);
+    expect(createOrderDbDto.quote).toEqual(quote);
+    expect(createOrderDbDto.currency).toEqual(currency);
+    expect(createOrderDbDto.datetime).toEqual(ccxtOrder.datetime);
+    expect(createOrderDbDto.timestamp).toEqual(ccxtOrder.timestamp);
+    expect(createOrderDbDto.createdBy).toEqual(OrderCreatedByEnum.SCRIPT);
+    expect(createOrderDbDto.rawData).toEqual(ccxtOrder);
   });
 });

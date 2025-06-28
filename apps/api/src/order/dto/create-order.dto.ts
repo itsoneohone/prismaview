@@ -1,5 +1,10 @@
 import { OmitType } from '@nestjs/mapped-types';
-import { OrderSideEnum, OrderStatusEnum, OrderTypeEnum } from '@prisma/client';
+import {
+  OrderCreatedByEnum,
+  OrderSideEnum,
+  OrderStatusEnum,
+  OrderTypeEnum,
+} from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import {
   IsDateString,
@@ -100,4 +105,8 @@ export class CreateOrderDbDto extends OmitType(CreateOrderDto, ['timestamp']) {
 
   @IsOptional()
   rawData: string;
+
+  @IsEnum(OrderCreatedByEnum)
+  @IsOptional()
+  createdBy: OrderCreatedByEnum = OrderCreatedByEnum.USER;
 }

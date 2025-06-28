@@ -10,6 +10,7 @@ import {
   OrderStatusEnum,
   OrderTypeEnum,
   OrderSideEnum,
+  OrderCreatedByEnum,
 } from '@prisma/client';
 
 /**
@@ -118,6 +119,7 @@ export const ccxtToCreateOrderDbDto = (
     fee: ccxtOrder.fee.cost,
     accessKeyId: accessKeyId,
     userId,
+    createdBy: OrderCreatedByEnum.SCRIPT,
     rawData: ccxtOrder,
   };
 };
