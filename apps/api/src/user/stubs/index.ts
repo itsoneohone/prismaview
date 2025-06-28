@@ -1,9 +1,8 @@
 import { faker } from '@faker-js/faker/locale/af_ZA';
-import { RoleEnum } from '@prisma/client';
-import { getRandomAmount } from 'src/shared/utils/amounts';
-import { FiatCurrency } from '@/shared/constants/currency';
-import { UserSettingName } from 'src/user/common/constants';
-import { CreateUserDto } from 'src/user/dto';
+import { RoleEnum, UserSetting } from '@prisma/client';
+import { FiatCurrency } from '@shared/constants/currency';
+import { UserSettingName } from '@user/common/constants';
+import { CreateUserDto } from '@user/dto';
 
 export const CreateUserSettingsDtoStub = () => {
   return [
@@ -11,6 +10,35 @@ export const CreateUserSettingsDtoStub = () => {
       name: UserSettingName.BASE_CURRENCY,
       value: FiatCurrency.USD,
     },
+  ];
+};
+
+export const UserSettingStub = (
+  userId: number,
+  settingName?: string,
+  settingValue?: string,
+): UserSetting => {
+  return {
+    id: faker.number.int({ min: 1, max: 1000 }),
+    userId,
+    name: settingName || UserSettingName.BASE_CURRENCY,
+    value: settingValue || FiatCurrency.USD,
+    createdAt: new Date('2023-01-01'),
+    updatedAt: new Date('2023-01-01'),
+  };
+};
+
+export const UserSettingsStub = (userId: number): UserSetting[] => {
+  return [
+    UserSettingStub(userId, UserSettingName.BASE_CURRENCY, FiatCurrency.USD),
+  ];
+};
+
+export const UserSettingsWithMultipleStub = (userId: number): UserSetting[] => {
+  return [
+    UserSettingStub(userId, UserSettingName.BASE_CURRENCY, FiatCurrency.USD),
+    UserSettingStub(userId, 'THEME', 'dark'),
+    UserSettingStub(userId, 'LANGUAGE', 'en'),
   ];
 };
 
@@ -26,7 +54,6 @@ export const CreateUserDtoStub = (): CreateUserDto => {
 
 export const UserStub = (userId?: number, createUserDto?: CreateUserDto) => {
   const dto: CreateUserDto = createUserDto || CreateUserDtoStub();
-  const initialBalance = getRandomAmount(2000);
 
   return {
     id: userId || 1,
@@ -36,10 +63,34 @@ export const UserStub = (userId?: number, createUserDto?: CreateUserDto) => {
     hash: dto.hash,
     firstName: faker.person.firstName(),
     lastName: faker.person.lastName(),
-    initialBalance,
-    currentBalance: initialBalance.mul(0.9),
     role: RoleEnum.USER,
     userSettings: [...CreateUserSettingsDtoStub()],
+  };
+};
+
+export const UserWithSettingsStub = (
+  userId?: number,
+  createUserDto?: CreateUserDto,
+) => {
+  const user = UserStub(userId, createUserDto);
+  const userIdForSettings = user.id;
+
+  return {
+    ...user,
+    userSettings: UserSettingsStub(userIdForSettings),
+  };
+};
+
+export const UserWithMultipleSettingsStub = (
+  userId?: number,
+  createUserDto?: CreateUserDto,
+) => {
+  const user = UserStub(userId, createUserDto);
+  const userIdForSettings = user.id;
+
+  return {
+    ...user,
+    userSettings: UserSettingsWithMultipleStub(userIdForSettings),
   };
 };
 

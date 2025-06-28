@@ -20,7 +20,8 @@ import { Response } from 'express';
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  private serializeSession(
+  // Not used
+  private _serializeSession(
     id: number,
     email: string,
     role: RoleEnum,
@@ -34,10 +35,10 @@ export class AuthController {
   }
 
   // Not used
-  @Post('signup-sess')
+  @Post('signup-session')
   async signupSession(@Body() dto: AuthDto, @Session() session: UserSession) {
     const { id, email, role } = await this.authService.signup(dto);
-    return this.serializeSession(id, email, role, session);
+    return this._serializeSession(id, email, role, session);
   }
 
   // Not used
@@ -45,7 +46,7 @@ export class AuthController {
   @Post('signin-session')
   async signinSession(@Body() dto: AuthDto, @Session() session: UserSession) {
     const { id, email, role } = await this.authService.signin(dto);
-    return this.serializeSession(id, email, role, session);
+    return this._serializeSession(id, email, role, session);
   }
 
   @Get('signin')

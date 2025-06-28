@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
 import { UserService } from '@user/user.service';
 import { AdminRoute, GetUserFromJwt } from '@auth/decorators';
 
@@ -15,5 +15,16 @@ export class UserController {
   @Get('me')
   me(@GetUserFromJwt('id') userId: number) {
     return this.userService.getMe(userId);
+  }
+
+  @Get(':id')
+  getPublicUser(@Param('id', ParseIntPipe) userId: number) {
+    return this.userService.getPublicUserById(userId);
+  }
+
+  @AdminRoute()
+  @Get('admin/:id')
+  getAdminUser(@Param('id', ParseIntPipe) userId: number) {
+    return this.userService.getUserById(userId);
   }
 }

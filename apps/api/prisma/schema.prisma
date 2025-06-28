@@ -8,19 +8,17 @@ datasource db {
 }
 
 model User {
-  id             Int           @id @default(autoincrement())
-  createdAt      DateTime      @default(now()) @db.Timestamptz()
-  updatedAt      DateTime      @updatedAt @db.Timestamptz()
-  email          String        @unique @db.VarChar(256)
-  hash           String        @db.VarChar(512)
-  firstName      String?       @db.VarChar(256)
-  lastName       String?       @db.VarChar(256)
-  currentBalance Decimal       @default(2000) @db.Decimal(10, 2)
-  initialBalance Decimal       @default(2000) @db.Decimal(10, 2)
-  role           RoleEnum      @default(USER)
-  accessKey      AccessKey[]
-  order          Order[]
-  userSettings   UserSetting[]
+  id           Int           @id @default(autoincrement())
+  createdAt    DateTime      @default(now()) @db.Timestamptz()
+  updatedAt    DateTime      @updatedAt @db.Timestamptz()
+  email        String        @unique @db.VarChar(256)
+  hash         String        @db.VarChar(512)
+  firstName    String?       @db.VarChar(256)
+  lastName     String?       @db.VarChar(256)
+  role         RoleEnum      @default(USER)
+  accessKey    AccessKey[]
+  order        Order[]
+  userSettings UserSetting[]
 
   @@map("user")
 }
