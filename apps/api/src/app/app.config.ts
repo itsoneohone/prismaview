@@ -13,6 +13,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import * as hbs from 'hbs';
 import { ValidationError } from 'class-validator';
 import type { Request } from 'express';
+import { GlobalExceptionFilter } from '@/shared/filters/global-exception.filter';
 
 /**
  * Set up Morgan HTTP request logging
@@ -80,6 +81,28 @@ export function setupPipes(app: NestExpressApplication | INestApplication) {
           })),
         );
       },
+    }),
+  );
+
+  // Global exception filter to handle Prisma unique constraint violations
+  // This filter transforms database-specific exceptions (like P2002 unique constraint errors)
+  // into standardized HTTP responses that match the validation pipe's error format.
+  // Without this filter, Prisma errors would return raw database error objects,
+  // but with it, we get consistent BadRequestException responses with the same
+  // structure as validation errors: { field: string, error: string[] }[]
+  app.useGlobalFilters(
+    new GlobalExceptionFilter((exception: any) => {
+      // Check if it's a Prisma unique constraint violation
+      if (exception.code === 'P2002') {
+        const field = exception.meta?.target?.[0] || 'unknown';
+        return new BadRequestException([
+          {
+            field,
+            error: [`${field} already exists`],
+          },
+        ]);
+      }
+      return exception;
     }),
   );
 }
