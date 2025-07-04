@@ -2,7 +2,6 @@ import * as argon from 'argon2';
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { AuthDto } from './dto';
 import { PrismaService } from '../prisma/prisma.service';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { UserService } from 'src/user/user.service';
@@ -117,25 +116,15 @@ export class AuthService {
    * @returns
    */
   async jwtSignup(dto: AuthDto) {
-    try {
-      const hash = await argon.hash(dto.password);
+    const hash = await argon.hash(dto.password);
 
-      const createUserDto: CreateUserDto = {
-        email: dto.email,
-        hash,
-      };
-      const user = await this.userService.createUser(createUserDto);
+    const createUserDto: CreateUserDto = {
+      email: dto.email,
+      hash,
+    };
+    const user = await this.userService.createUser(createUserDto);
 
-      return this.signJwtToken(user.id, user.email, user.role);
-    } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError) {
-        // Unique constraint violation - The provided email is reserved by another user
-        if (error.code === 'P2002') {
-          throw new ForbiddenException('Credentials taken');
-        }
-      }
-      throw error;
-    }
+    return this.signJwtToken(user.id, user.email, user.role);
   }
 
   /**
