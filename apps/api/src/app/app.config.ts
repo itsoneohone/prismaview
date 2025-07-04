@@ -14,6 +14,7 @@ import * as hbs from 'hbs';
 import { ValidationError } from 'class-validator';
 import type { Request } from 'express';
 import { GlobalExceptionFilter } from '@/shared/filters/global-exception.filter';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 /**
  * Set up Morgan HTTP request logging
@@ -93,7 +94,10 @@ export function setupPipes(app: NestExpressApplication | INestApplication) {
   app.useGlobalFilters(
     new GlobalExceptionFilter((exception: any) => {
       // Check if it's a Prisma unique constraint violation
-      if (exception.code === 'P2002') {
+      if (
+        exception instanceof PrismaClientKnownRequestError &&
+        exception.code === 'P2002'
+      ) {
         const field = exception.meta?.target?.[0] || 'unknown';
         return new BadRequestException([
           {
