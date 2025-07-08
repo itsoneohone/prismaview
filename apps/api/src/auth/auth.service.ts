@@ -1,5 +1,9 @@
 import * as argon from 'argon2';
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
 import { AuthDto } from './dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
@@ -33,7 +37,7 @@ export class AuthService {
     });
 
     if (userExists) {
-      throw new ForbiddenException('Credentials incorrect');
+      throw new BadRequestException('Email already registered');
     }
 
     // Hash the password - the generated hash includes all the necessary information
